@@ -10,6 +10,8 @@ services:
       NODE_ENV: production
       HOSTNAME: 0.0.0.0
       PORT: 3010
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
+      NINE_ROUTER_URL: http://host.docker.internal:20128
     ports:
       - "127.0.0.1:3010:3010"
     volumes:
@@ -19,6 +21,8 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     security_opt:
       - no-new-privileges:true
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
 volumes:
   command-center-data:

@@ -78,80 +78,103 @@ async function getVpsMetrics(): Promise<{ status: StatusTone; metrics: ResourceM
   return { status, metrics };
 }
 
-async function checkOllama(now: string): Promise<{ status: ServiceStatus; models: string[] }> {
-  try {
-    const response = await fetch("http://127.0.0.1:11434/api/tags", { cache: "no-store" });
+function candidateUrls(envName: string, defaults: string[]) {
+  return [...(process.env[envName] ? [process.env[envName] as string] : []), ...defaults].map((url) => url.replace(/\/$/, ""));
+}
 
-    if (!response.ok) {
+async function checkOllama(now: string): Promise<{ status: ServiceStatus; models: string[] }> {
+  const urls = candidateUrls("OLLAMA_BASE_URL", ["http://127.0.0.1:11434", "http://host.docker.internal:11434"]);
+
+  for (const url of urls) {
+    try {
+      const response = await fetch(`${url}/api/tags`, { cache: "no-store" });
+
+      if (!response.ok) {
+        return {
+          status: {
+            name: "Ollama",
+            status: "degraded",
+            detail: `Responded with HTTP ${response.status}`,
+            checked_at: now,
+            source: `${url}/api/tags`
+          },
+          models: []
+        };
+      }
+
+      const data = (await response.json()) as { models?: Array<{ name?: string }> };
+      const models = data.models?.flatMap((model) => (model.name ? [model.name] : [])) ?? [];
+
       return {
         status: {
           name: "Ollama",
-          status: "degraded",
-          detail: `Responded with HTTP ${response.status}`,
+          status: "online",
+          detail: `${models.length} installed model${models.length === 1 ? "" : "s"}`,
           checked_at: now,
-          source: "http://127.0.0.1:11434/api/tags"
+          source: `${url}/api/tags`
         },
-        models: []
+        models
       };
+    } catch {
+      continue;
     }
-
-    const data = (await response.json()) as { models?: Array<{ name?: string }> };
-    const models = data.models?.flatMap((model) => (model.name ? [model.name] : [])) ?? [];
-
-    return {
-      status: {
-        name: "Ollama",
-        status: "online",
-        detail: `${models.length} installed model${models.length === 1 ? "" : "s"}`,
-        checked_at: now,
-        source: "localhost API"
-      },
-      models
-    };
-  } catch {
-    return {
-      status: {
-        name: "Ollama",
-        status: "offline",
-        detail: "Local API not reachable",
-        checked_at: now,
-        source: "http://127.0.0.1:11434"
-      },
-      models: []
-    };
   }
+
+  return {
+    status: {
+      name: "Ollama",
+      status: "offline",
+      detail: "Local API not reachable from configured host URLs",
+      checked_at: now,
+      source: urls.join(", ")
+    },
+    models: []
+  };
 }
 
 async function checkRouter(now: string): Promise<ServiceStatus> {
-  try {
-    const response = await fetch("http://127.0.0.1:20128", { cache: "no-store" });
-    return {
-      name: "9Router",
-      status: response.status < 500 ? "online" : "degraded",
-      detail: `Local endpoint returned HTTP ${response.status}`,
-      checked_at: now,
-      source: "http://127.0.0.1:20128"
-    };
-  } catch {
-    return {
-      name: "9Router",
-      status: "offline",
-      detail: "Local endpoint not reachable",
-      checked_at: now,
-      source: "http://127.0.0.1:20128"
-    };
+  const urls = candidateUrls("NINE_ROUTER_URL", ["http://127.0.0.1:20128", "http://host.docker.internal:20128"]);
+
+  for (const url of urls) {
+    try {
+      const response = await fetch(url, { cache: "no-store" });
+      return {
+        name: "9Router",
+        status: response.status < 500 ? "online" : "degraded",
+        detail: `Local endpoint returned HTTP ${response.status}`,
+        checked_at: now,
+        source: url
+      };
+    } catch {
+      continue;
+    }
   }
+
+  return {
+    name: "9Router",
+    status: "offline",
+    detail: "Local endpoint not reachable from configured host URLs",
+    checked_at: now,
+    source: urls.join(", ")
+  };
 }
 
 async function checkDocker(now: string): Promise<ServiceStatus> {
+  const socketPresent = await stat("/var/run/docker.sock")
+    .then(() => true)
+    .catch(() => false);
   const socketReadable = await access("/var/run/docker.sock", constants.R_OK)
     .then(() => true)
     .catch(() => false);
 
   return {
     name: "Docker",
-    status: socketReadable ? "online" : "unknown",
-    detail: socketReadable ? "Docker socket is present and readable" : "Docker socket is not readable by this process",
+    status: socketReadable ? "online" : socketPresent ? "degraded" : "unknown",
+    detail: socketReadable
+      ? "Docker socket is present and readable"
+      : socketPresent
+        ? "Docker socket is mounted but not readable by the unprivileged process"
+        : "Docker socket is not mounted",
     checked_at: now,
     source: "/var/run/docker.sock"
   };
