@@ -1,0 +1,50 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  --background: 222 28% 7%;
+  --foreground: 210 35% 96%;
+  --card: 220 24% 10%;
+  --card-foreground: 210 35% 96%;
+  --border: 217 18% 22%;
+  --muted: 220 18% 16%;
+  --muted-foreground: 216 12% 68%;
+  --primary: 166 76% 42%;
+  --primary-foreground: 168 100% 8%;
+  --accent: 212 72% 42%;
+  --accent-foreground: 210 35% 96%;
+  --destructive: 0 72% 42%;
+  --destructive-foreground: 210 35% 96%;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+  background: hsl(var(--background));
+}
+
+body {
+  margin: 0;
+}
+
+body::before {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  content: "";
+  background:
+    linear-gradient(rgba(148, 163, 184, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.025) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+pre,
+code {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+}

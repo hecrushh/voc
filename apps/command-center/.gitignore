@@ -1,6 +1,7 @@
 .next
 node_modules
 *.log
+tsconfig.tsbuildinfo
 voc.db
 data/*.db
 data/*.db-shm
