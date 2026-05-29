@@ -1,0 +1,19 @@
+services:
+  command-center:
+    build:
+      context: ./apps/command-center
+    container_name: voc-command-center
+    restart: unless-stopped
+    environment:
+      VOC_DB_PATH: /app/data/voc.db
+      VOC_ROOT: /voc
+      NODE_ENV: production
+    ports:
+      - "127.0.0.1:3010:3010"
+    volumes:
+      - ./docs:/voc/docs:ro
+      - ./memory:/voc/memory:ro
+      - ./data:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    security_opt:
+      - no-new-privileges:true
