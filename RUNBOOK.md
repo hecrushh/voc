@@ -82,9 +82,12 @@ cd /opt/voc
 docker compose up --build
 ```
 
+The Compose service uses host networking so read-only checks can reach host-local Ollama and 9Router instances bound to loopback. Next.js is explicitly bound to `127.0.0.1:3010`, not all interfaces.
+
 ## Security Notes
 
 - The Compose service binds to `127.0.0.1:3010`.
+- Docker host networking is used only to inspect loopback services such as Ollama and 9Router.
 - Documentation and memory mounts are read-only.
 - Infrastructure integrations are read-only.
 - Secrets are never displayed. GitHub and Cloudflare report configuration posture only.
