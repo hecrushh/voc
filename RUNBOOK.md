@@ -14,8 +14,6 @@
 │       │   └── missions
 │       ├── components
 │       └── lib
-├── data
-│   └── voc.db
 ├── docs
 ├── memory
 ├── docker-compose.yml
@@ -24,11 +22,13 @@
 
 ## Database Schema
 
-SQLite database path:
+SQLite database path inside the container:
 
 ```text
-/opt/voc/data/voc.db
+/app/data/voc.db
 ```
+
+Docker Compose persists this through the named volume `voc_command-center-data`.
 
 Schema:
 

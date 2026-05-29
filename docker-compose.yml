@@ -15,7 +15,10 @@ services:
     volumes:
       - ./docs:/voc/docs:ro
       - ./memory:/voc/memory:ro
-      - ./data:/app/data
+      - command-center-data:/app/data
       - /var/run/docker.sock:/var/run/docker.sock:ro
     security_opt:
       - no-new-privileges:true
+
+volumes:
+  command-center-data:
