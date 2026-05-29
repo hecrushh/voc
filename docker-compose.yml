@@ -8,6 +8,8 @@ services:
       VOC_DB_PATH: /app/data/voc.db
       VOC_ROOT: /voc
       NODE_ENV: production
+      HOSTNAME: 0.0.0.0
+      PORT: 3010
     ports:
       - "127.0.0.1:3010:3010"
     volumes:
