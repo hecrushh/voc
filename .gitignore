@@ -1,0 +1,6 @@
+data/*.db
+data/*.db-shm
+data/*.db-wal
+apps/command-center/.next
+apps/command-center/node_modules
+apps/command-center/tsconfig.tsbuildinfo
