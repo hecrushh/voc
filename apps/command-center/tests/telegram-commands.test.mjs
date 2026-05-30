@@ -63,3 +63,13 @@ test('enforces Telegram commander allowlist', async () => {
   assert.equal(sent.length, 1);
   assert.match(sent[0].text, /Current VOC state|VOC status|Sire/);
 });
+
+test('keeps natural language BERTHIER routing shared between Telegram and web command paths', () => {
+  const telegramResult = telegramCommands.handleTelegramCommand('Create mission: Shared state mission');
+  assert.equal(telegramResult.result?.command.source, 'telegram');
+  assert.equal(telegramResult.result?.mission?.title, 'Shared state mission');
+
+  const webResult = telegramCommands.handleTelegramCommand('Summarize status');
+  assert.match(webResult.text, /Current VOC state, Sire/);
+  assert.ok(db.listMissions().some((mission) => mission.title === 'Shared state mission'));
+});
