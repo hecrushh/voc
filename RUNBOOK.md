@@ -152,12 +152,14 @@ Do not paste real values into chat or terminal transcripts. Do not run `env`, `p
 - The Compose service binds to `127.0.0.1:3010`.
 - Docker host networking is used only to inspect loopback services such as Ollama and 9Router.
 - Docker socket access remains restricted for the unprivileged app process. The UI reports this as `restricted`, not degraded, because the restriction is intentional.
-- Documentation and memory mounts are read-only.
+- Documentation, memory, and reports mounts are read-only.
 - Infrastructure integrations are read-only.
 - Secrets are never displayed. GitHub and Cloudflare report configuration posture only.
 - Hermes provider statuses report environment-variable presence only and never reveal API keys.
 - Hermes runtime discovery reports binary/configuration posture only and never reads secret-bearing config contents.
-- No autonomous agents, tool execution, external deployments, or cloud calls are implemented.
+- Mission Engine v0.2 is implemented through commits `1266e27`, `ca5ad78`, `2e2900a`, and `15dc4cb`.
+- No autonomous agents, Telegram interface, provider execution, external action execution, external deployments, or cloud calls are implemented.
+- Risky BERTHIER commands are approval-gated and converted into approval requests instead of being executed.
 
 ## UI Summary
 
@@ -165,4 +167,5 @@ Do not paste real values into chat or terminal transcripts. Do not run `env`, `p
 - Agent Board: ten command roles, all `Offline / Planned`.
 - Mission Registry: mission CRUD backed by SQLite.
 - Memory Vault: read-only explorer for `/opt/voc/docs` and `/opt/voc/memory`.
+- Reports: read-only explorer for Markdown reports in `/opt/voc/reports`.
 - Infrastructure: read-only status for VPS, Docker, GitHub, Cloudflare, Hermes runtime, Hermes providers, and Ollama.

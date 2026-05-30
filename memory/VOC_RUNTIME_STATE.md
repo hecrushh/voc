@@ -2,13 +2,18 @@
 
 ## Timestamp
 
-Recorded during VOC Command Center MVP v0.1 runtime stabilization.
+Recorded during VOC Command Center Mission Engine v0.2 stabilization.
 
 ## Current Runtime
 
 - Command Center runs locally at `http://127.0.0.1:3010`.
 - Commit `76a3287` added the BERTHIER command surface at `/berthier`.
-- `/berthier` is read-only/non-functional command intake only.
+- Commit `1266e27` added the BERTHIER audit and execution-plan reports.
+- Commit `ca5ad78` added Mission Engine persistence: `commands`, `approvals`, expanded `mission_events`, and linked mission audit fields.
+- Commit `2e2900a` added BERTHIER deterministic command parser v0 and Mission Engine service behavior.
+- Commit `15dc4cb` wired controlled BERTHIER intake, approval endpoints, and mission timeline UI.
+- Mission Engine v0.2 is implemented.
+- `/berthier` is now controlled Mission Engine v0.2 intake for mission state, command records, status summaries, and approval requests.
 - `/berthier` performs no autonomous execution and makes no provider calls.
 - `/berthier` displays no secrets.
 - Docker Compose uses host networking so read-only checks can inspect loopback services.
@@ -61,9 +66,13 @@ Decision:
 ## Security Posture
 
 - No autonomous agents are active.
+- No Telegram interface is active.
+- No provider execution is active.
+- No external action execution is active.
+- Risky commands are approval-gated and converted into approval requests instead of being executed.
 - No tool execution is exposed through the UI.
-- The BERTHIER `/berthier` command surface is intake-only and non-functional.
-- `/berthier` does not trigger autonomous execution.
+- The BERTHIER `/berthier` command surface is functional only for controlled Mission Engine v0.2 state changes.
+- `/berthier` does not trigger autonomous execution or external side effects.
 - `/berthier` makes no provider calls.
 - No external cloud calls are made for GitHub or Cloudflare.
 - No secrets are displayed.

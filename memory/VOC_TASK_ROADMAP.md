@@ -13,6 +13,35 @@ Build the first working VOC Command Center prototype by proceeding in strict ord
 7. Authenticated deployment.
 8. Future orchestration.
 
+## Mission Engine v0.2 Checkpoint
+
+Status: implemented.
+
+Recorded commits:
+
+- `1266e27` — BERTHIER audit and execution-plan reports.
+- `ca5ad78` — Mission Engine persistence: `commands`, `approvals`, expanded `mission_events`, and linked mission audit fields.
+- `2e2900a` — BERTHIER deterministic command parser v0 and Mission Engine service behavior.
+- `15dc4cb` — Controlled BERTHIER intake, approval endpoints, and mission timeline UI.
+
+Implemented scope:
+
+- Commands table.
+- Approvals table.
+- Expanded mission events.
+- Command parser v0.
+- Functional `/berthier` intake.
+- Mission timeline.
+- Approval workflow.
+
+Current safety posture:
+
+- No autonomous agents.
+- No Telegram.
+- No provider execution.
+- No external action execution.
+- Risky commands are approval-gated and converted into approval requests.
+
 ## Phase 0: Audit And Planning
 
 Status: in progress.
@@ -200,7 +229,8 @@ Owner: BERTHIER and LANNES.
 Current state:
 
 - Commit `76a3287` added the BERTHIER command surface at `/berthier`.
-- `/berthier` is read-only/non-functional intake.
+- Commit `15dc4cb` made `/berthier` functional for controlled Mission Engine v0.2 intake.
+- `/berthier` can create mission records, update mission state, summarize status, list blocked missions, and create approval requests.
 - `/berthier` performs no autonomous execution.
 - `/berthier` makes no provider calls.
 - `/berthier` displays no secrets.

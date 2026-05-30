@@ -17,6 +17,7 @@ services:
     volumes:
       - ./docs:/voc/docs:ro
       - ./memory:/voc/memory:ro
+      - ./reports:/voc/reports:ro
       - command-center-data:/app/data
       - /var/run/docker.sock:/var/run/docker.sock:ro
     security_opt:

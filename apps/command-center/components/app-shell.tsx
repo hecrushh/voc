@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Activity, Archive, Bot, Command, Database, Gauge, Network, Shield } from "lucide-react";
+import { Activity, Archive, Bot, Command, Database, FileText, Gauge, Network, Shield } from "lucide-react";
 
 const nav = [
   { href: "/", label: "Strategic Overview", icon: Gauge },
@@ -7,6 +7,7 @@ const nav = [
   { href: "/agents", label: "Agent Board", icon: Bot },
   { href: "/missions", label: "Mission Registry", icon: Archive },
   { href: "/memory", label: "Memory Vault", icon: Database },
+  { href: "/reports", label: "Reports", icon: FileText },
   { href: "/infrastructure", label: "Infrastructure", icon: Network }
 ];
 
@@ -17,7 +18,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="mb-8 border-b border-border pb-5">
           <div className="text-xs uppercase tracking-[0.32em] text-muted-foreground">VOC</div>
           <div className="mt-2 text-2xl font-semibold">Command Center</div>
-          <div className="mt-2 text-sm text-muted-foreground">MVP v0.1 local command surface</div>
+          <div className="mt-2 text-sm text-muted-foreground">Mission Engine v0.2 local command surface</div>
         </div>
         <nav className="space-y-2">
           {nav.map((item) => (
