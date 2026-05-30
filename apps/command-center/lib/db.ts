@@ -46,8 +46,10 @@ function getDb() {
         commander_id TEXT NOT NULL,
         status TEXT NOT NULL CHECK (status IN ('received', 'parsed', 'rejected', 'converted_to_mission', 'awaiting_approval', 'completed')),
         risk_level TEXT NOT NULL CHECK (risk_level IN ('low', 'medium', 'high', 'critical')),
+        linked_mission_id TEXT,
         created_at TEXT NOT NULL,
-        resolved_at TEXT
+        resolved_at TEXT,
+        FOREIGN KEY (linked_mission_id) REFERENCES missions(id) ON DELETE SET NULL
       );
 
       CREATE TABLE IF NOT EXISTS missions (
@@ -104,6 +106,7 @@ function getDb() {
     ensureColumn("missions", "due_at", "TEXT");
     ensureColumn("missions", "blocked_reason", "TEXT");
     ensureColumn("missions", "completed_at", "TEXT");
+    ensureColumn("commands", "linked_mission_id", "TEXT");
     ensureColumn("mission_events", "command_id", "TEXT");
     ensureColumn("mission_events", "agent_id", "TEXT");
     ensureColumn("mission_events", "metadata_json", "TEXT NOT NULL DEFAULT '{}'");
@@ -156,6 +159,7 @@ function rowToCommand(row: Record<string, unknown>): CommandRecord {
     commander_id: String(row.commander_id),
     status: row.status as CommandStatus,
     risk_level: row.risk_level as CommandRiskLevel,
+    linked_mission_id: nullableString(row.linked_mission_id),
     created_at: String(row.created_at),
     resolved_at: nullableString(row.resolved_at)
   };
@@ -268,6 +272,7 @@ export function validateCommandInput(input: Partial<CommandInput>): CommandInput
     commander_id: commanderId,
     status,
     risk_level: riskLevel,
+    linked_mission_id: input.linked_mission_id ?? null,
     resolved_at: input.resolved_at ?? null
   };
 }
@@ -446,10 +451,21 @@ export function createCommand(input: CommandInput): CommandRecord {
 
   getDb()
     .prepare(`
-      INSERT INTO commands (id, source, raw_text, parsed_intent, commander_id, status, risk_level, created_at, resolved_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO commands (id, source, raw_text, parsed_intent, commander_id, status, risk_level, linked_mission_id, created_at, resolved_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `)
-    .run(id, command.source, command.raw_text, command.parsed_intent, command.commander_id, command.status, command.risk_level, now, command.resolved_at ?? null);
+    .run(
+      id,
+      command.source,
+      command.raw_text,
+      command.parsed_intent,
+      command.commander_id,
+      command.status,
+      command.risk_level,
+      command.linked_mission_id ?? null,
+      now,
+      command.resolved_at ?? null
+    );
 
   return getCommand(id) as CommandRecord;
 }
@@ -478,15 +494,16 @@ export function updateCommand(id: string, input: Partial<CommandInput>): Command
     commander_id: input.commander_id ?? current.commander_id,
     status: input.status ?? current.status,
     risk_level: input.risk_level ?? current.risk_level,
+    linked_mission_id: input.linked_mission_id ?? current.linked_mission_id,
     resolved_at: input.resolved_at ?? current.resolved_at
   });
   getDb()
     .prepare(`
       UPDATE commands
-      SET source = ?, raw_text = ?, parsed_intent = ?, commander_id = ?, status = ?, risk_level = ?, resolved_at = ?
+      SET source = ?, raw_text = ?, parsed_intent = ?, commander_id = ?, status = ?, risk_level = ?, linked_mission_id = ?, resolved_at = ?
       WHERE id = ?
     `)
-    .run(next.source, next.raw_text, next.parsed_intent, next.commander_id, next.status, next.risk_level, next.resolved_at ?? null, id);
+    .run(next.source, next.raw_text, next.parsed_intent, next.commander_id, next.status, next.risk_level, next.linked_mission_id ?? null, next.resolved_at ?? null, id);
   return getCommand(id);
 }
 

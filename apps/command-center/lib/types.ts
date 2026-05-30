@@ -65,6 +65,7 @@ export type CommandRecord = {
   commander_id: string;
   status: CommandStatus;
   risk_level: CommandRiskLevel;
+  linked_mission_id: string | null;
   created_at: string;
   resolved_at: string | null;
 };
@@ -76,6 +77,7 @@ export type CommandInput = {
   commander_id: string;
   status: CommandStatus;
   risk_level: CommandRiskLevel;
+  linked_mission_id?: string | null;
   resolved_at?: string | null;
 };
 
