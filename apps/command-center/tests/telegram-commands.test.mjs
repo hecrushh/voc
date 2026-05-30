@@ -35,7 +35,7 @@ test('handles Telegram mission update through Mission Engine', () => {
   const created = telegramCommands.handleTelegramCommand('/create Update from Telegram');
   assert.ok(created.result?.mission?.id);
 
-  const updated = telegramCommands.handleTelegramCommand(`/update ${created.result.mission.id} active`);
+  const updated = telegramCommands.handleTelegramCommand(`/update ${created.result.mission.id.slice(0, 8)} active`);
   assert.match(updated.text, /Mission updated, Sire/);
   assert.match(updated.text, /Status: active/);
 });

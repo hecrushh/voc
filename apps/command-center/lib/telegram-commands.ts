@@ -47,8 +47,21 @@ export function handleTelegramCommand(text: string): TelegramCommandResponse {
     return { text: formatMissionDetail(missionDetail[1]) };
   }
 
-  const result = processBerthierCommand(normalized, { source: "telegram", commanderId: "telegram" });
+  const resolvedCommand = resolveMissionReferenceInCommand(normalized);
+  if (resolvedCommand === "ambiguous") return { text: "Mission reference is ambiguous, Sire. Use a longer ID prefix." };
+  if (resolvedCommand === "missing") return { text: "Mission not found, Sire." };
+
+  const result = processBerthierCommand(resolvedCommand, { source: "telegram", commanderId: "telegram" });
   return { text: formatBerthierResult(result), result };
+}
+
+export function resolveMissionReferenceInCommand(command: string): string | "ambiguous" | "missing" {
+  const match = command.match(/^(Mark mission|Assign mission)\s+([a-f0-9-]+)(.*)$/i);
+  if (!match) return command;
+  const resolved = resolveMissionByPrefix(match[2]);
+  if (resolved === "ambiguous") return "ambiguous";
+  if (!resolved) return "missing";
+  return `${match[1]} ${resolved.id}${match[3]}`;
 }
 
 export function formatBerthierResult(result: BerthierCommandResult): string {
