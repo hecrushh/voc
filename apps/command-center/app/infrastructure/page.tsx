@@ -12,7 +12,7 @@ export default async function InfrastructurePage() {
       <PageHeader
         eyebrow="Infrastructure"
         title="Read-only infrastructure status"
-        description="VPS, Docker, GitHub, Cloudflare, Ollama, 9Router, and OpenCode status posture. GitHub and Cloudflare do not call external services or display credentials."
+        description="VPS, Docker, GitHub, Cloudflare, Ollama, 9Router, OpenCode, and Hermes provider status posture. Credential checks use environment presence only and never display values."
       />
       <div className="grid gap-4 xl:grid-cols-[1fr_1.2fr]">
         <Card>
@@ -66,14 +66,46 @@ export default async function InfrastructurePage() {
 
       <Card className="mt-4">
         <CardHeader>
+          <CardTitle>Hermes provider posture</CardTitle>
+        </CardHeader>
+        <CardContent className="overflow-x-auto">
+          <table className="w-full min-w-[720px] text-left text-sm">
+            <thead className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
+              <tr className="border-b border-border">
+                <th className="py-3 pr-4 font-medium">Provider</th>
+                <th className="py-3 pr-4 font-medium">Status</th>
+                <th className="py-3 pr-4 font-medium">Detail</th>
+                <th className="py-3 pr-4 font-medium">Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              {infrastructure.providers.map((provider) => (
+                <tr key={provider.name} className="border-b border-border/70">
+                  <td className="py-3 pr-4 font-medium">{provider.name}</td>
+                  <td className="py-3 pr-4">
+                    <StatusBadge status={provider.status} />
+                  </td>
+                  <td className="py-3 pr-4 text-muted-foreground">{provider.detail}</td>
+                  <td className="py-3 pr-4 text-muted-foreground">{provider.source}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </CardContent>
+      </Card>
+
+      <Card className="mt-4">
+        <CardHeader>
           <CardTitle>Status doctrine</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-3 text-sm text-muted-foreground md:grid-cols-2 xl:grid-cols-5">
+        <CardContent className="grid gap-3 text-sm text-muted-foreground md:grid-cols-2 xl:grid-cols-7">
           <div><StatusBadge status="online" /> <p className="mt-2">Reachable and healthy during the read-only check.</p></div>
           <div><StatusBadge status="degraded" /> <p className="mt-2">Reachable, but returned an unhealthy response or crossed a resource threshold.</p></div>
           <div><StatusBadge status="restricted" /> <p className="mt-2">Intentionally blocked by least-privilege runtime policy.</p></div>
           <div><StatusBadge status="planned" /> <p className="mt-2">Installed, manual, or future integration with no persistent service expected.</p></div>
           <div><StatusBadge status="offline" /> <p className="mt-2">Expected persistent service is not reachable.</p></div>
+          <div><StatusBadge status="configured" /> <p className="mt-2">Required environment variable is present; the value is hidden.</p></div>
+          <div><StatusBadge status="unconfigured" /> <p className="mt-2">Required environment variable is absent.</p></div>
         </CardContent>
       </Card>
 

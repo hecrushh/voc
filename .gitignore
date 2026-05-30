@@ -1,6 +1,9 @@
 data/*.db
 data/*.db-shm
 data/*.db-wal
+.env
+.env.*
+!.env.example
 apps/command-center/.next
 apps/command-center/node_modules
 apps/command-center/tsconfig.tsbuildinfo

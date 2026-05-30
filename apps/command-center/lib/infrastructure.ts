@@ -215,6 +215,33 @@ async function checkCredentialPosture(name: string, envNames: string[], now: str
   };
 }
 
+function checkProviderPosture(name: string, envName: string, now: string): ServiceStatus {
+  const configured = Boolean(process.env[envName]);
+
+  return {
+    name,
+    status: configured ? "configured" : "unconfigured",
+    detail: configured
+      ? "Credential presence detected; value is intentionally hidden and no model call was made"
+      : "Credential not detected; Hermes provider remains planned until configured",
+    checked_at: now,
+    source: `${envName} presence only`
+  };
+}
+
+function checkLocalOllamaProvider(ollama: ServiceStatus): ServiceStatus {
+  return {
+    name: "Ollama Local",
+    status: ollama.status === "online" ? "online" : "offline",
+    detail:
+      ollama.status === "online"
+        ? "Local Ollama API is reachable for private lightweight routing"
+        : "Local Ollama API is not reachable for private lightweight routing",
+    checked_at: ollama.checked_at,
+    source: ollama.source
+  };
+}
+
 export async function getInfrastructureStatus(): Promise<InfrastructureStatus> {
   const now = checkedAt();
   const [vps, ollama, router, docker, git, github, cloudflare, opencode] = await Promise.all([
@@ -229,6 +256,13 @@ export async function getInfrastructureStatus(): Promise<InfrastructureStatus> {
   ]);
 
   const services = [ollama.status, router, docker, git, github, cloudflare, opencode];
+  const providers = [
+    checkProviderPosture("OpenAI", "OPENAI_API_KEY", now),
+    checkProviderPosture("DeepSeek", "DEEPSEEK_API_KEY", now),
+    checkProviderPosture("Xiaomi MiMo", "MIMO_API_KEY", now),
+    checkProviderPosture("Ollama Cloud", "OLLAMA_API_KEY", now),
+    checkLocalOllamaProvider(ollama.status)
+  ];
 
   await stat("/opt/voc").catch(() => null);
 
@@ -236,6 +270,7 @@ export async function getInfrastructureStatus(): Promise<InfrastructureStatus> {
     checked_at: now,
     vps,
     services,
+    providers,
     models: ollama.models
   };
 }

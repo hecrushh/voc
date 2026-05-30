@@ -91,6 +91,43 @@ The Compose service uses host networking so read-only checks can reach host-loca
 - No process currently listens on `127.0.0.1:20128`.
 - The dashboard treats unreachable 9Router as `planned` while `NINE_ROUTER_RUNTIME_MODE=manual`.
 
+Hermes provider posture:
+
+- OpenAI: premium fallback and general reasoning, detected by `OPENAI_API_KEY` presence only.
+- DeepSeek: coding and reasoning, detected by `DEEPSEEK_API_KEY` presence only.
+- Xiaomi MiMo: alternate reasoning and coding, detected by `MIMO_API_KEY` presence only.
+- Ollama Cloud: remote Ollama-compatible provider, detected by `OLLAMA_API_KEY` presence only.
+- Ollama Local: private/local lightweight provider, detected by local Ollama API reachability only.
+- The Command Center does not call external model APIs during status checks.
+- The Command Center never displays credential values, prefixes, fingerprints, or secret-bearing URLs.
+
+## Safe Secret Setup
+
+Use `/opt/voc/.env.example` as a placeholder reference only. Do not put real API keys in committed files, documentation, memory files, command output, or issue text.
+
+Recommended handling:
+
+```bash
+cd /opt/voc
+cp .env.example .env
+chmod 600 .env
+```
+
+Then edit `.env` locally and replace placeholder values with real provider keys. `.env` is ignored by git.
+
+For local development, export only the variables needed by the process:
+
+```bash
+export OPENAI_API_KEY=...
+export DEEPSEEK_API_KEY=...
+export MIMO_API_KEY=...
+export OLLAMA_API_KEY=...
+cd /opt/voc/apps/command-center
+npm run dev
+```
+
+Do not paste real values into chat or terminal transcripts. Do not run `env`, `printenv`, or secret-bearing `docker compose config` output in a shared context. If Docker Compose is later wired to consume a secret env file directly, treat `docker compose config` as sensitive because Compose may render resolved environment values.
+
 ## Security Notes
 
 - The Compose service binds to `127.0.0.1:3010`.
@@ -99,6 +136,7 @@ The Compose service uses host networking so read-only checks can reach host-loca
 - Documentation and memory mounts are read-only.
 - Infrastructure integrations are read-only.
 - Secrets are never displayed. GitHub and Cloudflare report configuration posture only.
+- Hermes provider statuses report environment-variable presence only and never reveal API keys.
 - No autonomous agents, tool execution, external deployments, or cloud calls are implemented.
 
 ## UI Summary
@@ -107,4 +145,4 @@ The Compose service uses host networking so read-only checks can reach host-loca
 - Agent Board: ten command roles, all `Offline / Planned`.
 - Mission Registry: mission CRUD backed by SQLite.
 - Memory Vault: read-only explorer for `/opt/voc/docs` and `/opt/voc/memory`.
-- Infrastructure: read-only status for VPS, Docker, GitHub, and Cloudflare.
+- Infrastructure: read-only status for VPS, Docker, GitHub, Cloudflare, Hermes providers, and Ollama.
