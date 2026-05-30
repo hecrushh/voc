@@ -169,3 +169,45 @@ Do not paste real values into chat or terminal transcripts. Do not run `env`, `p
 - Memory Vault: read-only explorer for `/opt/voc/docs` and `/opt/voc/memory`.
 - Reports: read-only explorer for Markdown reports in `/opt/voc/reports`.
 - Infrastructure: read-only status for VPS, Docker, GitHub, Cloudflare, Hermes runtime, Hermes providers, and Ollama.
+
+## VOC Alpha Telegram Interface
+
+VOC Alpha adds a commander-facing Telegram interface to existing BERTHIER and Mission Engine v0.2 capabilities.
+
+Environment variables:
+
+```text
+TELEGRAM_BOT_TOKEN
+TELEGRAM_ALLOWED_USER_IDS
+TELEGRAM_WEBHOOK_SECRET optional
+```
+
+Supported Alpha commands:
+
+```text
+/status
+/missions
+/mission <id>
+/create <title>
+/update <id> active|completed|blocked <reason>
+/briefing
+/workload
+/focus
+/skp status
+/skp checklist
+/skp next
+/skp risk
+/skp mission <title>
+/repo status
+/github status
+```
+
+Safety posture:
+
+- Telegram is an intake and response channel only.
+- Mission creation and mission status updates use existing Mission Engine paths.
+- `/briefing`, `/workload`, `/repo status`, and `/github status` are read-only summaries.
+- SKP assistant is planning/checklist only.
+- GitHub intelligence is read-only.
+- Provider routing has deterministic fallback and does not execute side effects.
+- No autonomous agents, workers, queues, Playwright execution, GitHub writes, SKP execution, or approval bypass were added.

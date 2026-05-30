@@ -17,6 +17,39 @@ Build the first working VOC Command Center prototype by proceeding in strict ord
 
 Status: implemented.
 
+## VOC Alpha Telegram Checkpoint
+
+Status: implemented.
+
+Implemented scope:
+
+- Telegram BERTHIER intake route.
+- Commander allowlist enforcement.
+- Telegram slash command normalization.
+- Mission creation from Telegram.
+- Mission updates from Telegram.
+- Recent mission and mission detail summaries.
+- Daily briefing via `/briefing`.
+- Workload summary via `/workload` using existing `missions.owner_agent`.
+- Safe model routing with deterministic fallback.
+- SKP planning/checklist assistant with execution blocked.
+- Read-only local repo/GitHub intelligence via `/repo status` and `/github status`.
+
+Safety posture:
+
+- No Agent Assignment implementation.
+- No schema migration.
+- No autonomous agents.
+- No workers, queues, or autonomous loops.
+- No Playwright or SKP execution.
+- No GitHub writes.
+- No provider side effects.
+- Approval discipline remains intact.
+
+## Mission Engine v0.2 Historical Notes
+
+Status: implemented.
+
 Recorded commits:
 
 - `1266e27` — BERTHIER audit and execution-plan reports.

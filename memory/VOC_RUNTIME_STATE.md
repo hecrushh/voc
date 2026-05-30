@@ -66,14 +66,17 @@ Decision:
 ## Security Posture
 
 - No autonomous agents are active.
-- No Telegram interface is active.
-- No provider execution is active.
+- Telegram interface is active for commander-facing BERTHIER intake when `TELEGRAM_BOT_TOKEN` and `TELEGRAM_ALLOWED_USER_IDS` are configured.
+- Telegram intake is allowlist-gated and does not bypass Mission Engine approval discipline.
+- No provider execution side effects are active; Alpha model routing is safe, optional, and deterministic-fallback capable.
 - No external action execution is active.
 - Risky commands are approval-gated and converted into approval requests instead of being executed.
-- No tool execution is exposed through the UI.
+- No tool execution is exposed through the UI or Telegram.
 - The BERTHIER `/berthier` command surface is functional only for controlled Mission Engine v0.2 state changes.
 - `/berthier` does not trigger autonomous execution or external side effects.
 - `/berthier` makes no provider calls.
-- No external cloud calls are made for GitHub or Cloudflare.
+- Telegram `/briefing`, `/workload`, `/skp`, and `/repo status` commands provide summaries/planning/read-only intelligence only.
+- No external cloud calls are made for Cloudflare.
+- GitHub intelligence is read-only/local-repo first and performs no writes.
 - No secrets are displayed.
 - Infrastructure integrations remain read-only.
