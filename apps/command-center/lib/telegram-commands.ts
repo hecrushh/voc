@@ -1,6 +1,7 @@
 import { listApprovals, listMissions } from "./db.ts";
 import { generateDailyBriefing } from "./briefing.ts";
 import { summarizeWorkload } from "./workload.ts";
+import { routeSafeModelTask } from "./model-router.ts";
 import { processBerthierCommand } from "./mission-engine.ts";
 import type { BerthierCommandResult } from "./mission-engine.ts";
 import type { Mission } from "./types.ts";
@@ -46,6 +47,12 @@ export function handleTelegramCommand(text: string): TelegramCommandResponse {
 
   if (/^\/workload(?:@\w+)?$/i.test(normalized)) {
     return { text: summarizeWorkload() };
+  }
+
+  if (/^\/(?:focus|prioritize)(?:@\w+)?$/i.test(normalized)) {
+    const fallback = generateDailyBriefing();
+    const routed = routeSafeModelTask({ category: "reasoning", prompt: "Recommend today focus from mission state", fallback });
+    return { text: routed.text };
   }
 
   if (/^\/missions(?:@\w+)?$/i.test(normalized)) {
