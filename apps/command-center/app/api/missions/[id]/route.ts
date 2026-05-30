@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { deleteMission, getMission, updateMission } from "@/lib/db";
+import { deleteMission, getMission, listMissionEvents, updateMission } from "@/lib/db";
 
 export const runtime = "nodejs";
 
@@ -15,7 +15,7 @@ export async function GET(_request: Request, { params }: Params) {
     return NextResponse.json({ error: "Mission not found." }, { status: 404 });
   }
 
-  return NextResponse.json({ mission });
+  return NextResponse.json({ mission, events: listMissionEvents(id) });
 }
 
 export async function PATCH(request: Request, { params }: Params) {
@@ -29,7 +29,7 @@ export async function PATCH(request: Request, { params }: Params) {
       return NextResponse.json({ error: "Mission not found." }, { status: 404 });
     }
 
-    return NextResponse.json({ mission });
+    return NextResponse.json({ mission, events: listMissionEvents(id) });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Invalid mission." }, { status: 400 });
   }

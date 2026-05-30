@@ -1,8 +1,10 @@
 import { AlertTriangle, LockKeyhole, RadioTower, ScrollText, ShieldCheck } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
-import { Button, Card, CardContent, CardHeader, CardTitle, Input, StatusBadge, Textarea } from "@/components/ui";
+import { Card, CardContent, CardHeader, CardTitle, StatusBadge } from "@/components/ui";
+import { listApprovals, listCommands } from "@/lib/db";
 import { getInfrastructureStatus } from "@/lib/infrastructure";
 import type { ServiceStatus } from "@/lib/types";
+import { BerthierConsole } from "./berthier-console";
 
 export const dynamic = "force-dynamic";
 
@@ -37,6 +39,8 @@ function StatusTable({ items, noun }: { items: ServiceStatus[]; noun: string }) 
 
 export default async function BerthierPage() {
   const infrastructure = await getInfrastructureStatus();
+  const commands = listCommands(25);
+  const approvals = listApprovals("requested");
   const hermesRuntime = infrastructure.runtimes.find((runtime) => runtime.name === "Hermes Runtime");
   const hermesConfig = infrastructure.runtimes.find((runtime) => runtime.name === "Hermes Configuration");
   const configuredProviders = infrastructure.providers.filter((provider) => provider.status === "configured" || provider.status === "online").length;
@@ -46,63 +50,11 @@ export default async function BerthierPage() {
       <PageHeader
         eyebrow="BERTHIER"
         title="Chief of Staff command surface"
-        description="Read-only command intake draft for VOC coordination. This page displays Hermes runtime posture and provider metadata only; it cannot submit, execute, or call models."
+        description="Controlled Mission Engine v0.2 intake. BERTHIER can create and update mission state, request approvals, and report current status without autonomous agents, Telegram, provider execution, or external side effects."
       />
 
       <div className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
-        <Card>
-          <CardHeader>
-            <CardTitle>Command intake draft — disabled</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="rounded-md border border-amber-400/25 bg-amber-400/10 p-4 text-sm text-amber-100">
-              <div className="mb-2 flex items-center gap-2 font-medium text-amber-50">
-                <LockKeyhole className="h-4 w-4" />
-                Intake is deliberately non-functional
-              </div>
-              No POST endpoint exists for BERTHIER. These fields are read-only UI scaffolding: no submit handler, no autonomous execution, no provider/model calls, and no secrets are displayed.
-            </div>
-
-            <div className="grid gap-3 md:grid-cols-2">
-              <label className="space-y-2 text-sm">
-                <span className="text-muted-foreground">Commander</span>
-                <Input value="VOC" readOnly aria-label="Commander" />
-              </label>
-              <label className="space-y-2 text-sm">
-                <span className="text-muted-foreground">Priority</span>
-                <Input value="Draft only" readOnly aria-label="Priority" />
-              </label>
-            </div>
-
-            <label className="space-y-2 text-sm">
-              <span className="text-muted-foreground">Command objective</span>
-              <Textarea
-                value="Draft command text may be composed here in a future controlled workflow, but this release intentionally does not transmit or execute anything."
-                readOnly
-                aria-label="Command objective"
-              />
-            </label>
-
-            <div className="grid gap-3 md:grid-cols-3">
-              <div className="rounded-md border border-border bg-background p-4">
-                <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Submission</div>
-                <div className="mt-2 font-semibold">Disabled</div>
-              </div>
-              <div className="rounded-md border border-border bg-background p-4">
-                <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Execution</div>
-                <div className="mt-2 font-semibold">Manual only</div>
-              </div>
-              <div className="rounded-md border border-border bg-background p-4">
-                <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">LLM calls</div>
-                <div className="mt-2 font-semibold">None</div>
-              </div>
-            </div>
-
-            <Button type="button" disabled className="w-full md:w-auto">
-              Submit disabled by safety doctrine
-            </Button>
-          </CardContent>
-        </Card>
+        <BerthierConsole initialCommands={commands} initialApprovals={approvals} />
 
         <div className="space-y-4">
           <Card>
@@ -170,7 +122,7 @@ export default async function BerthierPage() {
           <div className="rounded-md border border-border bg-background p-4 text-sm text-muted-foreground">
             <AlertTriangle className="mb-3 h-5 w-5 text-amber-300" />
             <div className="mb-2 font-medium text-foreground">No autonomous execution</div>
-            Command intake is intentionally disabled until explicit approval, authorization, audit logging, and manual review controls exist.
+            Mission Engine v0.2 can write mission, command, event, and approval records only. It still cannot invoke autonomous workers.
           </div>
           <div className="rounded-md border border-border bg-background p-4 text-sm text-muted-foreground">
             <ScrollText className="mb-3 h-5 w-5 text-sky-300" />

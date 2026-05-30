@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { Pencil, Plus, Trash2, X } from "lucide-react";
 import { Button, Card, CardContent, CardHeader, CardTitle, Input, Select, StatusBadge, Textarea } from "@/components/ui";
-import type { Agent, Mission, MissionInput, MissionPriority, MissionStatus } from "@/lib/types";
+import type { Agent, Mission, MissionEvent, MissionInput, MissionPriority, MissionStatus } from "@/lib/types";
 
 const statuses: MissionStatus[] = ["queued", "active", "blocked", "completed", "cancelled"];
 const priorities: MissionPriority[] = ["low", "normal", "high", "critical"];
@@ -16,8 +16,17 @@ const emptyForm: MissionInput = {
   owner_agent: "berthier"
 };
 
-export function MissionRegistry({ initialMissions, agents }: { initialMissions: Mission[]; agents: Agent[] }) {
+export function MissionRegistry({
+  initialMissions,
+  initialEvents,
+  agents
+}: {
+  initialMissions: Mission[];
+  initialEvents: Record<string, MissionEvent[]>;
+  agents: Agent[];
+}) {
   const [missions, setMissions] = useState(initialMissions);
+  const [events, setEvents] = useState(initialEvents);
   const [form, setForm] = useState<MissionInput>(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -62,7 +71,7 @@ export function MissionRegistry({ initialMissions, agents }: { initialMissions: 
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form)
     });
-    const payload = (await response.json()) as { mission?: Mission; error?: string };
+    const payload = (await response.json()) as { mission?: Mission; events?: MissionEvent[]; error?: string };
 
     setSaving(false);
 
@@ -74,6 +83,9 @@ export function MissionRegistry({ initialMissions, agents }: { initialMissions: 
     setMissions((current) =>
       editingId ? current.map((mission) => (mission.id === payload.mission?.id ? payload.mission : mission)) : [payload.mission as Mission, ...current]
     );
+    if (payload.events && payload.mission) {
+      setEvents((current) => ({ ...current, [payload.mission!.id]: payload.events as MissionEvent[] }));
+    }
     resetForm();
   }
 
@@ -86,6 +98,11 @@ export function MissionRegistry({ initialMissions, agents }: { initialMissions: 
     }
 
     setMissions((current) => current.filter((mission) => mission.id !== id));
+    setEvents((current) => {
+      const next = { ...current };
+      delete next[id];
+      return next;
+    });
   }
 
   return (
@@ -184,6 +201,17 @@ export function MissionRegistry({ initialMissions, agents }: { initialMissions: 
                         <Trash2 className="mr-2 h-3.5 w-3.5" />
                         Delete
                       </Button>
+                    </div>
+                    <div className="mt-4 rounded-md border border-border/70 bg-card/50 p-3">
+                      <div className="mb-2 text-xs uppercase tracking-[0.16em] text-muted-foreground">Timeline</div>
+                      <div className="space-y-2">
+                        {(events[mission.id] ?? []).slice(-4).map((event) => (
+                          <div key={event.id} className="text-xs text-muted-foreground">
+                            <span className="font-medium text-foreground">{event.event_type}</span> · {event.summary} · {new Date(event.created_at).toLocaleString()}
+                          </div>
+                        ))}
+                        {(events[mission.id] ?? []).length === 0 ? <div className="text-xs text-muted-foreground">No timeline events recorded.</div> : null}
+                      </div>
                     </div>
                   </article>
                 ))
