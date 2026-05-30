@@ -1,5 +1,6 @@
 import { listApprovals, listMissions } from "./db.ts";
 import { generateDailyBriefing } from "./briefing.ts";
+import { summarizeWorkload } from "./workload.ts";
 import { processBerthierCommand } from "./mission-engine.ts";
 import type { BerthierCommandResult } from "./mission-engine.ts";
 import type { Mission } from "./types.ts";
@@ -41,6 +42,10 @@ export function handleTelegramCommand(text: string): TelegramCommandResponse {
 
   if (/^\/briefing(?:@\w+)?$/i.test(normalized)) {
     return { text: generateDailyBriefing() };
+  }
+
+  if (/^\/workload(?:@\w+)?$/i.test(normalized)) {
+    return { text: summarizeWorkload() };
   }
 
   if (/^\/missions(?:@\w+)?$/i.test(normalized)) {

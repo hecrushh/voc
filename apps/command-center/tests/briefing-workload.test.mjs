@@ -9,6 +9,7 @@ process.env.VOC_DB_PATH = join(dbDir, 'voc.db');
 
 const engine = await import('../lib/mission-engine.ts');
 const briefing = await import('../lib/briefing.ts');
+const workload = await import('../lib/workload.ts');
 const telegramCommands = await import('../lib/telegram-commands.ts');
 
 test('generates deterministic daily briefing from mission state', () => {
@@ -28,4 +29,15 @@ test('Telegram /briefing returns useful briefing output', () => {
   assert.match(response.text, /Daily briefing, Sire/);
   assert.match(response.text, /Missions:/);
   assert.match(response.text, /Top focus:/);
+});
+
+test('generates read-only workload summary from existing owner_agent field', () => {
+  engine.processBerthierCommand('Create mission: Workload alpha check');
+  const summary = workload.summarizeWorkload();
+  assert.match(summary, /Workload, Sire/);
+  assert.match(summary, /BERTHIER:/);
+  assert.match(summary, /missions/);
+
+  const telegram = telegramCommands.handleTelegramCommand('/workload');
+  assert.equal(telegram.text, summary);
 });
