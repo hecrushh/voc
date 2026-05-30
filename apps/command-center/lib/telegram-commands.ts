@@ -2,6 +2,7 @@ import { listApprovals, listMissions } from "./db.ts";
 import { generateDailyBriefing } from "./briefing.ts";
 import { summarizeWorkload } from "./workload.ts";
 import { routeSafeModelTask } from "./model-router.ts";
+import { handleSkpCommand } from "./skp-assistant.ts";
 import { processBerthierCommand } from "./mission-engine.ts";
 import type { BerthierCommandResult } from "./mission-engine.ts";
 import type { Mission } from "./types.ts";
@@ -40,6 +41,10 @@ export function normalizeTelegramCommand(text: string): string | null {
 export function handleTelegramCommand(text: string): TelegramCommandResponse {
   const normalized = normalizeTelegramCommand(text);
   if (!normalized) return { text: "Command text is required, Sire." };
+
+  if (/^\/skp(?:@\w+)?(?:\s|$)/i.test(normalized)) {
+    return { text: handleSkpCommand(normalized) };
+  }
 
   if (/^\/briefing(?:@\w+)?$/i.test(normalized)) {
     return { text: generateDailyBriefing() };
