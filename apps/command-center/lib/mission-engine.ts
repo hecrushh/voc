@@ -119,14 +119,17 @@ export function parseBerthierCommand(rawText: string): ParsedBerthierCommand {
   return { intent: "unknown", summary: text };
 }
 
-export function processBerthierCommand(rawText: string): BerthierCommandResult {
+export function processBerthierCommand(
+  rawText: string,
+  options: { source?: "berthier_ui" | "telegram" | "system" | "future_api"; commanderId?: string } = {}
+): BerthierCommandResult {
   const parsed = parseBerthierCommand(rawText);
   const initialRisk = parsed.intent === "request_approval" ? parsed.risk_level : "low";
   let command = createCommand({
-    source: "berthier_ui",
+    source: options.source ?? "berthier_ui",
     raw_text: rawText,
     parsed_intent: parsed.intent,
-    commander_id: "voc",
+    commander_id: options.commanderId ?? "voc",
     status: "received",
     risk_level: initialRisk
   });
