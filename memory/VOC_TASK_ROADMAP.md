@@ -197,6 +197,14 @@ Exit criteria:
 
 Owner: BERTHIER and LANNES.
 
+Current state:
+
+- Commit `76a3287` added the BERTHIER command surface at `/berthier`.
+- `/berthier` is read-only/non-functional intake.
+- `/berthier` performs no autonomous execution.
+- `/berthier` makes no provider calls.
+- `/berthier` displays no secrets.
+
 Tasks:
 
 - Add command model.

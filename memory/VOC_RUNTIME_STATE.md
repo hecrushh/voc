@@ -7,6 +7,10 @@ Recorded during VOC Command Center MVP v0.1 runtime stabilization.
 ## Current Runtime
 
 - Command Center runs locally at `http://127.0.0.1:3010`.
+- Commit `76a3287` added the BERTHIER command surface at `/berthier`.
+- `/berthier` is read-only/non-functional command intake only.
+- `/berthier` performs no autonomous execution and makes no provider calls.
+- `/berthier` displays no secrets.
 - Docker Compose uses host networking so read-only checks can inspect loopback services.
 - Next.js is bound to `127.0.0.1:3010`.
 - Mission persistence uses SQLite at `/app/data/voc.db` inside the container.
@@ -58,6 +62,9 @@ Decision:
 
 - No autonomous agents are active.
 - No tool execution is exposed through the UI.
+- The BERTHIER `/berthier` command surface is intake-only and non-functional.
+- `/berthier` does not trigger autonomous execution.
+- `/berthier` makes no provider calls.
 - No external cloud calls are made for GitHub or Cloudflare.
 - No secrets are displayed.
 - Infrastructure integrations remain read-only.
