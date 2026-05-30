@@ -3,6 +3,7 @@ import { generateDailyBriefing } from "./briefing.ts";
 import { summarizeWorkload } from "./workload.ts";
 import { routeSafeModelTask } from "./model-router.ts";
 import { handleSkpCommand } from "./skp-assistant.ts";
+import { isForbiddenGithubWriteRequest, summarizeRepoStatus } from "./github-intelligence.ts";
 import { processBerthierCommand } from "./mission-engine.ts";
 import type { BerthierCommandResult } from "./mission-engine.ts";
 import type { Mission } from "./types.ts";
@@ -44,6 +45,14 @@ export function handleTelegramCommand(text: string): TelegramCommandResponse {
 
   if (/^\/skp(?:@\w+)?(?:\s|$)/i.test(normalized)) {
     return { text: handleSkpCommand(normalized) };
+  }
+
+  if (/^\/(?:repo|github)(?:@\w+)?\s+status$/i.test(normalized)) {
+    return { text: summarizeRepoStatus() };
+  }
+
+  if (/^\/(?:repo|github)(?:@\w+)?\s+/i.test(normalized) && isForbiddenGithubWriteRequest(normalized)) {
+    return { text: "Approval required, Sire. VOC Alpha provides read-only GitHub intelligence and will not perform repository write actions." };
   }
 
   if (/^\/briefing(?:@\w+)?$/i.test(normalized)) {
