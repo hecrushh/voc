@@ -69,7 +69,7 @@ export default async function StrategicOverviewPage() {
           <CardContent>
             <div className="mb-3 flex items-center justify-between">
               <Cpu className="h-5 w-5 text-primary" />
-              <StatusBadge status={ollama?.status ?? "unknown"} />
+              <StatusBadge status={ollama?.status ?? "planned"} />
             </div>
             <div className="text-sm text-muted-foreground">{ollama?.detail ?? "Status unavailable"}</div>
             <div className="mt-4 text-2xl font-semibold">{infrastructure.models.length}</div>
@@ -84,9 +84,14 @@ export default async function StrategicOverviewPage() {
           <CardContent>
             <div className="mb-3 flex items-center justify-between">
               <HardDrive className="h-5 w-5 text-primary" />
-              <StatusBadge status={router?.status ?? "unknown"} />
+              <StatusBadge status={router?.status ?? "planned"} />
             </div>
             <div className="text-sm text-muted-foreground">{router?.detail ?? "Status unavailable"}</div>
+            {router?.status === "planned" ? (
+              <div className="mt-3 rounded-md border border-sky-400/20 bg-sky-400/10 p-3 text-xs text-sky-100">
+                Planned means 9Router is installed for manual use but is not configured as a persistent service.
+              </div>
+            ) : null}
             <div className="mt-4 text-xs text-muted-foreground">{router?.source}</div>
           </CardContent>
         </Card>

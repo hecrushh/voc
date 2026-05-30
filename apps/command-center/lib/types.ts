@@ -1,4 +1,4 @@
-export type StatusTone = "online" | "degraded" | "offline" | "unknown" | "planned";
+export type StatusTone = "online" | "degraded" | "restricted" | "planned" | "offline";
 
 export type Agent = {
   id: string;

@@ -66,6 +66,19 @@ export default async function InfrastructurePage() {
 
       <Card className="mt-4">
         <CardHeader>
+          <CardTitle>Status doctrine</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-3 text-sm text-muted-foreground md:grid-cols-2 xl:grid-cols-5">
+          <div><StatusBadge status="online" /> <p className="mt-2">Reachable and healthy during the read-only check.</p></div>
+          <div><StatusBadge status="degraded" /> <p className="mt-2">Reachable, but returned an unhealthy response or crossed a resource threshold.</p></div>
+          <div><StatusBadge status="restricted" /> <p className="mt-2">Intentionally blocked by least-privilege runtime policy.</p></div>
+          <div><StatusBadge status="planned" /> <p className="mt-2">Installed, manual, or future integration with no persistent service expected.</p></div>
+          <div><StatusBadge status="offline" /> <p className="mt-2">Expected persistent service is not reachable.</p></div>
+        </CardContent>
+      </Card>
+
+      <Card className="mt-4">
+        <CardHeader>
           <CardTitle>Model inventory</CardTitle>
         </CardHeader>
         <CardContent>

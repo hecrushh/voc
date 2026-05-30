@@ -82,12 +82,20 @@ cd /opt/voc
 docker compose up --build
 ```
 
-The Compose service uses host networking so read-only checks can reach host-local Ollama and 9Router instances bound to loopback. Next.js is explicitly bound to `127.0.0.1:3010`, not all interfaces.
+The Compose service uses host networking so read-only checks can reach host-local Ollama and any manually started 9Router instance bound to loopback. Next.js is explicitly bound to `127.0.0.1:3010`, not all interfaces.
+
+9Router runtime decision:
+
+- `/usr/bin/9router` is installed and reports version `0.4.66`.
+- No `9router.service` unit is installed.
+- No process currently listens on `127.0.0.1:20128`.
+- The dashboard treats unreachable 9Router as `planned` while `NINE_ROUTER_RUNTIME_MODE=manual`.
 
 ## Security Notes
 
 - The Compose service binds to `127.0.0.1:3010`.
 - Docker host networking is used only to inspect loopback services such as Ollama and 9Router.
+- Docker socket access remains restricted for the unprivileged app process. The UI reports this as `restricted`, not degraded, because the restriction is intentional.
 - Documentation and memory mounts are read-only.
 - Infrastructure integrations are read-only.
 - Secrets are never displayed. GitHub and Cloudflare report configuration posture only.

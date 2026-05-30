@@ -143,7 +143,7 @@ Read-only status objects:
 
 ```text
 component
-status: online | degraded | offline | unknown | planned
+status: online | degraded | restricted | planned | offline
 detail
 checked_at
 source

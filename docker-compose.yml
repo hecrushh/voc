@@ -12,6 +12,7 @@ services:
       PORT: 3010
       OLLAMA_BASE_URL: http://127.0.0.1:11434
       NINE_ROUTER_URL: http://127.0.0.1:20128
+      NINE_ROUTER_RUNTIME_MODE: manual
     network_mode: host
     volumes:
       - ./docs:/voc/docs:ro

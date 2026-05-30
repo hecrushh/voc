@@ -79,7 +79,7 @@ async function getVpsMetrics(): Promise<{ status: StatusTone; metrics: ResourceM
 }
 
 function candidateUrls(envName: string, defaults: string[]) {
-  return [...(process.env[envName] ? [process.env[envName] as string] : []), ...defaults].map((url) => url.replace(/\/$/, ""));
+  return Array.from(new Set([...(process.env[envName] ? [process.env[envName] as string] : []), ...defaults].map((url) => url.replace(/\/$/, ""))));
 }
 
 async function checkOllama(now: string): Promise<{ status: ServiceStatus; models: string[] }> {
@@ -134,6 +134,7 @@ async function checkOllama(now: string): Promise<{ status: ServiceStatus; models
 
 async function checkRouter(now: string): Promise<ServiceStatus> {
   const urls = candidateUrls("NINE_ROUTER_URL", ["http://127.0.0.1:20128", "http://host.docker.internal:20128"]);
+  const runtimeMode = process.env.NINE_ROUTER_RUNTIME_MODE ?? "manual";
 
   for (const url of urls) {
     try {
@@ -148,6 +149,16 @@ async function checkRouter(now: string): Promise<ServiceStatus> {
     } catch {
       continue;
     }
+  }
+
+  if (runtimeMode === "manual" || runtimeMode === "planned") {
+    return {
+      name: "9Router",
+      status: "planned",
+      detail: "9Router CLI is installed on the VPS, but no persistent listener or systemd service is configured. Start it manually when routing is needed.",
+      checked_at: now,
+      source: `manual runtime; checked ${urls.join(", ")}`
+    };
   }
 
   return {
@@ -169,12 +180,12 @@ async function checkDocker(now: string): Promise<ServiceStatus> {
 
   return {
     name: "Docker",
-    status: socketReadable ? "online" : socketPresent ? "degraded" : "unknown",
+    status: socketReadable ? "online" : socketPresent ? "restricted" : "planned",
     detail: socketReadable
       ? "Docker socket is present and readable"
       : socketPresent
-        ? "Docker socket is mounted but not readable by the unprivileged process"
-        : "Docker socket is not mounted",
+        ? "Docker socket is mounted read-only but intentionally unreadable by the unprivileged app process"
+        : "Docker socket is not mounted; container-level Docker inspection is disabled",
     checked_at: now,
     source: "/var/run/docker.sock"
   };
@@ -185,7 +196,7 @@ async function checkBinary(name: string, command: string, now: string): Promise<
 
   return {
     name,
-    status: exists ? "online" : "unknown",
+    status: exists ? "online" : "planned",
     detail: exists ? `${command} binary found` : `${command} binary not found in PATH`,
     checked_at: now,
     source: "local PATH"

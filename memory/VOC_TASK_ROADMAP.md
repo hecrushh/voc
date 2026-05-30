@@ -151,7 +151,7 @@ Tasks:
 - Add 9Router reachability adapter.
 - Add OpenCode presence adapter.
 - Add last-checked timestamps.
-- Add degraded/unknown handling.
+- Add degraded/restricted/planned/offline handling.
 
 Exit criteria:
 
