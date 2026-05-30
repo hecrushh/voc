@@ -101,6 +101,25 @@ Hermes provider posture:
 - The Command Center does not call external model APIs during status checks.
 - The Command Center never displays credential values, prefixes, fingerprints, or secret-bearing URLs.
 
+Hermes runtime discovery:
+
+- Host inspection during the Hermes runtime discovery mission found `/usr/local/bin/hermes`.
+- `hermes --version` reported `Hermes Agent v0.15.1 (2026.5.29)`.
+- Root-user Hermes metadata exists, but secret-bearing files were not opened or printed.
+- Command Center reports `Hermes Runtime` as `installed` or `missing` from the runtime environment PATH.
+- Command Center reports `Hermes Configuration` as `configured` or `unconfigured` from safe filesystem metadata only.
+- The status adapter checks standard metadata locations only and does not read config file contents.
+- Docker does not automatically expose host Hermes binaries or root-user Hermes config to Command Center.
+
+Hermes install/config plan:
+
+1. Install or update Hermes on the host outside the Command Center UI.
+2. Keep Hermes secrets in the approved Hermes config location or process environment, not in git.
+3. Confirm `which hermes` and `hermes --version` locally.
+4. Confirm config metadata exists without printing config contents.
+5. Decide separately whether Command Center should see host Hermes through a safe read-only adapter.
+6. Do not enable Hermes prompt routing, model calls, or tool execution from the UI until BERTHIER command intake, approval gates, and audit logging exist.
+
 ## Safe Secret Setup
 
 Use `/opt/voc/.env.example` as a placeholder reference only. Do not put real API keys in committed files, documentation, memory files, command output, or issue text.
@@ -137,6 +156,7 @@ Do not paste real values into chat or terminal transcripts. Do not run `env`, `p
 - Infrastructure integrations are read-only.
 - Secrets are never displayed. GitHub and Cloudflare report configuration posture only.
 - Hermes provider statuses report environment-variable presence only and never reveal API keys.
+- Hermes runtime discovery reports binary/configuration posture only and never reads secret-bearing config contents.
 - No autonomous agents, tool execution, external deployments, or cloud calls are implemented.
 
 ## UI Summary
@@ -145,4 +165,4 @@ Do not paste real values into chat or terminal transcripts. Do not run `env`, `p
 - Agent Board: ten command roles, all `Offline / Planned`.
 - Mission Registry: mission CRUD backed by SQLite.
 - Memory Vault: read-only explorer for `/opt/voc/docs` and `/opt/voc/memory`.
-- Infrastructure: read-only status for VPS, Docker, GitHub, Cloudflare, Hermes providers, and Ollama.
+- Infrastructure: read-only status for VPS, Docker, GitHub, Cloudflare, Hermes runtime, Hermes providers, and Ollama.

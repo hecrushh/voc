@@ -12,7 +12,7 @@ export default async function InfrastructurePage() {
       <PageHeader
         eyebrow="Infrastructure"
         title="Read-only infrastructure status"
-        description="VPS, Docker, GitHub, Cloudflare, Ollama, 9Router, OpenCode, and Hermes provider status posture. Credential checks use environment presence only and never display values."
+        description="VPS, Docker, GitHub, Cloudflare, Ollama, 9Router, OpenCode, Hermes runtime, and Hermes provider status posture. Credential checks use environment presence only and never display values."
       />
       <div className="grid gap-4 xl:grid-cols-[1fr_1.2fr]">
         <Card>
@@ -66,6 +66,36 @@ export default async function InfrastructurePage() {
 
       <Card className="mt-4">
         <CardHeader>
+          <CardTitle>Hermes runtime discovery</CardTitle>
+        </CardHeader>
+        <CardContent className="overflow-x-auto">
+          <table className="w-full min-w-[720px] text-left text-sm">
+            <thead className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
+              <tr className="border-b border-border">
+                <th className="py-3 pr-4 font-medium">Runtime</th>
+                <th className="py-3 pr-4 font-medium">Status</th>
+                <th className="py-3 pr-4 font-medium">Detail</th>
+                <th className="py-3 pr-4 font-medium">Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              {infrastructure.runtimes.map((runtime) => (
+                <tr key={runtime.name} className="border-b border-border/70">
+                  <td className="py-3 pr-4 font-medium">{runtime.name}</td>
+                  <td className="py-3 pr-4">
+                    <StatusBadge status={runtime.status} />
+                  </td>
+                  <td className="py-3 pr-4 text-muted-foreground">{runtime.detail}</td>
+                  <td className="py-3 pr-4 text-muted-foreground">{runtime.source}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </CardContent>
+      </Card>
+
+      <Card className="mt-4">
+        <CardHeader>
           <CardTitle>Hermes provider posture</CardTitle>
         </CardHeader>
         <CardContent className="overflow-x-auto">
@@ -98,8 +128,10 @@ export default async function InfrastructurePage() {
         <CardHeader>
           <CardTitle>Status doctrine</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-3 text-sm text-muted-foreground md:grid-cols-2 xl:grid-cols-7">
+        <CardContent className="grid gap-3 text-sm text-muted-foreground md:grid-cols-2 xl:grid-cols-9">
           <div><StatusBadge status="online" /> <p className="mt-2">Reachable and healthy during the read-only check.</p></div>
+          <div><StatusBadge status="installed" /> <p className="mt-2">Expected runtime binary is present.</p></div>
+          <div><StatusBadge status="missing" /> <p className="mt-2">Expected runtime binary is not present.</p></div>
           <div><StatusBadge status="degraded" /> <p className="mt-2">Reachable, but returned an unhealthy response or crossed a resource threshold.</p></div>
           <div><StatusBadge status="restricted" /> <p className="mt-2">Intentionally blocked by least-privilege runtime policy.</p></div>
           <div><StatusBadge status="planned" /> <p className="mt-2">Installed, manual, or future integration with no persistent service expected.</p></div>

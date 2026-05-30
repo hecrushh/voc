@@ -2,6 +2,7 @@ import { access, readFile, stat } from "node:fs/promises";
 import { constants } from "node:fs";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import path from "node:path";
 import type { InfrastructureStatus, ResourceMetric, ServiceStatus, StatusTone } from "@/lib/types";
 
 const execFileAsync = promisify(execFile);
@@ -203,6 +204,87 @@ async function checkBinary(name: string, command: string, now: string): Promise<
   };
 }
 
+function sanitizeVersion(value: string) {
+  return value
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .slice(0, 3)
+    .join("; ");
+}
+
+async function checkHermesInstalled(now: string): Promise<ServiceStatus> {
+  try {
+    const [{ stdout: binaryPath }, versionResult] = await Promise.all([
+      execFileAsync("which", ["hermes"], { timeout: 1500 }),
+      execFileAsync("hermes", ["--version"], { timeout: 3000 }).catch(() => null)
+    ]);
+    const version = versionResult ? sanitizeVersion(`${versionResult.stdout}${versionResult.stderr}`) : "";
+
+    return {
+      name: "Hermes Runtime",
+      status: "installed",
+      detail: version ? `Hermes binary found; ${version}` : "Hermes binary found; version unavailable",
+      checked_at: now,
+      source: binaryPath.trim() || "local PATH"
+    };
+  } catch {
+    return {
+      name: "Hermes Runtime",
+      status: "missing",
+      detail: "Hermes binary not found in PATH",
+      checked_at: now,
+      source: "local PATH"
+    };
+  }
+}
+
+async function pathExists(targetPath: string) {
+  return stat(targetPath)
+    .then(() => true)
+    .catch(() => false);
+}
+
+async function checkHermesConfiguration(now: string): Promise<ServiceStatus> {
+  const home = process.env.HOME || "/root";
+  const configDirs = Array.from(
+    new Set(
+      [
+        process.env.HERMES_CONFIG_DIR,
+        path.join(home, ".hermes"),
+        path.join(home, ".config", "hermes"),
+        "/etc/hermes"
+      ].filter((value): value is string => Boolean(value))
+    )
+  );
+
+  const configFiles = ["config.yaml", "config.yml", ".env", "settings.json"];
+  const detectedDir = await Promise.all(
+    configDirs.map(async (dir) => {
+      const dirExists = await pathExists(dir);
+      if (!dirExists) {
+        return null;
+      }
+
+      const hasConfigFile = await Promise.all(configFiles.map((file) => pathExists(path.join(dir, file)))).then((results) =>
+        results.some(Boolean)
+      );
+
+      return { dir, hasConfigFile };
+    })
+  ).then((results) => results.find((result) => result?.hasConfigFile) ?? results.find(Boolean));
+
+  return {
+    name: "Hermes Configuration",
+    status: detectedDir ? "configured" : "unconfigured",
+    detail: detectedDir
+      ? "Hermes configuration metadata detected; file contents and secret values were not read"
+      : "Hermes configuration metadata not detected in standard locations",
+    checked_at: now,
+    source: "safe filesystem metadata only"
+  };
+}
+
 async function checkCredentialPosture(name: string, envNames: string[], now: string): Promise<ServiceStatus> {
   const configured = envNames.some((envName) => Boolean(process.env[envName]));
 
@@ -244,7 +326,7 @@ function checkLocalOllamaProvider(ollama: ServiceStatus): ServiceStatus {
 
 export async function getInfrastructureStatus(): Promise<InfrastructureStatus> {
   const now = checkedAt();
-  const [vps, ollama, router, docker, git, github, cloudflare, opencode] = await Promise.all([
+  const [vps, ollama, router, docker, git, github, cloudflare, opencode, hermesInstalled, hermesConfiguration] = await Promise.all([
     getVpsMetrics(),
     checkOllama(now),
     checkRouter(now),
@@ -252,10 +334,13 @@ export async function getInfrastructureStatus(): Promise<InfrastructureStatus> {
     checkBinary("Git", "git", now),
     checkCredentialPosture("GitHub", ["GITHUB_TOKEN", "GH_TOKEN"], now),
     checkCredentialPosture("Cloudflare", ["CLOUDFLARE_API_TOKEN", "CF_API_TOKEN"], now),
-    checkBinary("OpenCode", "opencode", now)
+    checkBinary("OpenCode", "opencode", now),
+    checkHermesInstalled(now),
+    checkHermesConfiguration(now)
   ]);
 
   const services = [ollama.status, router, docker, git, github, cloudflare, opencode];
+  const runtimes = [hermesInstalled, hermesConfiguration];
   const providers = [
     checkProviderPosture("OpenAI", "OPENAI_API_KEY", now),
     checkProviderPosture("DeepSeek", "DEEPSEEK_API_KEY", now),
@@ -270,6 +355,7 @@ export async function getInfrastructureStatus(): Promise<InfrastructureStatus> {
     checked_at: now,
     vps,
     services,
+    runtimes,
     providers,
     models: ollama.models
   };

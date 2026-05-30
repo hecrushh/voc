@@ -1,4 +1,13 @@
-export type StatusTone = "online" | "degraded" | "restricted" | "planned" | "offline" | "configured" | "unconfigured";
+export type StatusTone =
+  | "online"
+  | "degraded"
+  | "restricted"
+  | "planned"
+  | "offline"
+  | "configured"
+  | "unconfigured"
+  | "installed"
+  | "missing";
 
 export type Agent = {
   id: string;
@@ -68,6 +77,7 @@ export type InfrastructureStatus = {
     metrics: ResourceMetric[];
   };
   services: ServiceStatus[];
+  runtimes: ServiceStatus[];
   providers: ServiceStatus[];
   models: string[];
 };
