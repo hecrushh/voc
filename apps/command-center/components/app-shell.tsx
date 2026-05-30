@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { Activity, Archive, Bot, Database, Gauge, Network, Shield } from "lucide-react";
+import { Activity, Archive, Bot, Command, Database, Gauge, Network, Shield } from "lucide-react";
 
 const nav = [
   { href: "/", label: "Strategic Overview", icon: Gauge },
+  { href: "/berthier", label: "BERTHIER", icon: Command },
   { href: "/agents", label: "Agent Board", icon: Bot },
   { href: "/missions", label: "Mission Registry", icon: Archive },
   { href: "/memory", label: "Memory Vault", icon: Database },
