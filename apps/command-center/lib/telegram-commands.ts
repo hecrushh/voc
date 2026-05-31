@@ -4,6 +4,14 @@ import { summarizeWorkload } from "./workload.ts";
 import { routeSafeModelTask } from "./model-router.ts";
 import { handleSkpCommand } from "./skp-assistant.ts";
 import { isForbiddenGithubWriteRequest, summarizeRepoStatus } from "./github-intelligence.ts";
+import {
+  classifyTelegramIntent,
+  formatApprovalRequired,
+  formatGeneralBerthierChat,
+  formatUnknownSafeFallback,
+  isSlashCommand,
+  mapIntentToDirectResponse
+} from "./telegram-intent-router.ts";
 import { processBerthierCommand } from "./mission-engine.ts";
 import type { BerthierCommandResult } from "./mission-engine.ts";
 import type { Mission } from "./types.ts";
@@ -42,6 +50,11 @@ export function normalizeTelegramCommand(text: string): string | null {
 export function handleTelegramCommand(text: string): TelegramCommandResponse {
   const normalized = normalizeTelegramCommand(text);
   if (!normalized) return { text: "Command text is required, Sire." };
+
+  if (!isSlashCommand(text)) {
+    const routed = handleNaturalLanguageTelegram(text);
+    if (routed) return routed;
+  }
 
   if (/^\/skp(?:@\w+)?(?:\s|$)/i.test(normalized)) {
     return { text: handleSkpCommand(normalized) };
@@ -84,6 +97,32 @@ export function handleTelegramCommand(text: string): TelegramCommandResponse {
 
   const result = processBerthierCommand(resolvedCommand, { source: "telegram", commanderId: "telegram" });
   return { text: formatBerthierResult(result), result };
+}
+
+export function handleNaturalLanguageTelegram(text: string): TelegramCommandResponse | null {
+  const classification = classifyTelegramIntent(text);
+  const direct = mapIntentToDirectResponse(classification);
+  if (direct) return { text: direct };
+
+  if (classification.intent === "approval_required") {
+    return { text: formatApprovalRequired(classification.language, text) };
+  }
+
+  if (classification.intent === "mission_list") return { text: formatRecentMissions() };
+  if (classification.intent === "repo_status") return { text: summarizeRepoStatus() };
+  if (classification.intent === "skp_planning") return { text: handleSkpCommand(classification.normalizedCommand ?? "/skp status") };
+  if (classification.intent === "general_berthier_chat") return { text: formatGeneralBerthierChat(text, classification.language) };
+  if (classification.intent === "unknown_safe_fallback") return { text: formatUnknownSafeFallback(classification.language) };
+
+  if (classification.normalizedCommand) {
+    const resolvedCommand = resolveMissionReferenceInCommand(classification.normalizedCommand);
+    if (resolvedCommand === "ambiguous") return { text: "Mission reference is ambiguous, Sire. Use a longer ID prefix." };
+    if (resolvedCommand === "missing") return { text: "Mission not found, Sire." };
+    const result = processBerthierCommand(resolvedCommand, { source: "telegram", commanderId: "telegram" });
+    return { text: formatBerthierResult(result), result };
+  }
+
+  return null;
 }
 
 export function resolveMissionReferenceInCommand(command: string): string | "ambiguous" | "missing" {
