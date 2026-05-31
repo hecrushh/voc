@@ -19,7 +19,7 @@ export type Agent = {
   constraints: string[];
 };
 
-export type MissionStatus = "queued" | "active" | "blocked" | "completed" | "cancelled";
+export type MissionStatus = "queued" | "active" | "blocked" | "pending_approval" | "approved" | "rejected" | "executed" | "completed" | "cancelled";
 export type MissionPriority = "low" | "normal" | "high" | "critical";
 
 export type Mission = {

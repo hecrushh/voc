@@ -7,6 +7,10 @@ export type OwnerWorkload = {
   queued: number;
   active: number;
   blocked: number;
+  pending_approval: number;
+  approved: number;
+  rejected: number;
+  executed: number;
   completed: number;
   cancelled: number;
   highPriority: number;
@@ -61,6 +65,10 @@ function emptyWorkload(owner: string): OwnerWorkload {
     queued: 0,
     active: 0,
     blocked: 0,
+    pending_approval: 0,
+    approved: 0,
+    rejected: 0,
+    executed: 0,
     completed: 0,
     cancelled: 0,
     highPriority: 0,

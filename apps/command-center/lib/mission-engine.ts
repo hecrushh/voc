@@ -212,7 +212,7 @@ export function processBerthierCommand(
     const mission = createMission({
       title: `Approval required: ${parsed.action_type}`,
       description: parsed.summary,
-      status: "blocked",
+      status: "pending_approval",
       priority: parsed.risk_level === "critical" ? "critical" : "high",
       owner_agent: "berthier",
       source_command_id: command.id,

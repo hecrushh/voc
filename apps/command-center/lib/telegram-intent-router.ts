@@ -19,7 +19,16 @@ export type TelegramIntent =
   | "unknown_safe_fallback"
   | "approval_required";
 
-export type TelegramIntentClassification = {
+export type TelegramApprovalDecisionClassification = {
+  type: "approval_decision";
+  decision: "approved" | "rejected";
+  missionId: string;
+  confidence: number;
+  reason: string;
+  language: "id" | "en";
+};
+
+export type TelegramStandardIntentClassification = {
   intent: TelegramIntent;
   confidence: number;
   normalizedCommand?: string;
@@ -27,15 +36,29 @@ export type TelegramIntentClassification = {
   language: "id" | "en";
 };
 
+export type TelegramIntentClassification = TelegramStandardIntentClassification | TelegramApprovalDecisionClassification;
+
 const missionIdPattern = "([a-f0-9]{6,}(?:-[a-f0-9-]+)?)";
 const riskyPattern = /\b(deploy|execute|run|jalankan|eksekusi|otomatisasi|automation|playwright|browser|login|post|posting|publish|push|merge|create\s+pr|buat\s+pr|delete|hapus|purchase|buy|beli|account|akun)\b/i;
 
-export function classifyTelegramIntent(text: string): TelegramIntentClassification {
+export function routeTelegramIntent(text: string): TelegramIntentClassification {
   const trimmed = text.trim();
   const language = detectLanguage(trimmed);
   const lower = normalizeForMatching(trimmed);
 
   if (!trimmed) return { intent: "unknown_safe_fallback", confidence: 1, reason: "empty_message", language };
+
+  const approvalDecision = matchApprovalDecision(trimmed);
+  if (approvalDecision) {
+    return {
+      type: "approval_decision",
+      decision: approvalDecision.decision,
+      missionId: approvalDecision.missionId,
+      confidence: 0.98,
+      reason: "approval_decision_keywords",
+      language
+    };
+  }
 
   if (riskyPattern.test(lower)) {
     return { intent: "approval_required", confidence: 0.95, reason: "risky_execution_request", language };
@@ -102,6 +125,14 @@ export function classifyTelegramIntent(text: string): TelegramIntentClassificati
   return modelAssistedClassification(trimmed, language);
 }
 
+export function classifyTelegramIntent(text: string): TelegramIntentClassification {
+  return routeTelegramIntent(text);
+}
+
+export function isApprovalDecision(classification: TelegramIntentClassification): classification is TelegramApprovalDecisionClassification {
+  return "type" in classification && classification.type === "approval_decision";
+}
+
 export function isSlashCommand(text: string): boolean {
   return /^\/\w+/.test(text.trim());
 }
@@ -152,9 +183,39 @@ export function formatUnknownSafeFallback(language: "id" | "en"): string {
 }
 
 export function mapIntentToDirectResponse(classification: TelegramIntentClassification): string | null {
+  if (isApprovalDecision(classification)) return null;
   if (classification.intent === "briefing_request") return generateDailyBriefing();
   if (classification.intent === "workload_query") return summarizeWorkload();
   if (classification.intent === "env_inventory") return formatEnvInventory(getEnvInventory());
+  return null;
+}
+
+function matchApprovalDecision(text: string): { decision: "approved" | "rejected"; missionId: string } | null {
+  const approvePatterns = [
+    /approve mission\s+([a-z0-9-]+)/i,
+    /^approve\s+([a-z0-9-]+)/i,
+    /^approved\s+([a-z0-9-]+)/i,
+    /^setuju\s+([a-z0-9-]+)/i,
+    /^ok\s+approve\s+([a-z0-9-]+)/i,
+  ];
+  for (const pattern of approvePatterns) {
+    const match = text.match(pattern);
+    if (match?.[1]) return { decision: "approved", missionId: match[1] };
+  }
+
+  const rejectPatterns = [
+    /reject mission\s+([a-z0-9-]+)/i,
+    /tolak mission\s+([a-z0-9-]+)/i,
+    /^reject\s+([a-z0-9-]+)/i,
+    /^rejected\s+([a-z0-9-]+)/i,
+    /^tolak\s+([a-z0-9-]+)/i,
+    /^batal\s+([a-z0-9-]+)/i,
+  ];
+  for (const pattern of rejectPatterns) {
+    const match = text.match(pattern);
+    if (match?.[1]) return { decision: "rejected", missionId: match[1] };
+  }
+
   return null;
 }
 

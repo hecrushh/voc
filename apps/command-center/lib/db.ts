@@ -24,7 +24,7 @@ const DB_PATH = process.env.VOC_DB_PATH ?? "/opt/voc/data/voc.db";
 
 let db: DatabaseSync | undefined;
 
-const allowedStatuses: MissionStatus[] = ["queued", "active", "blocked", "completed", "cancelled"];
+const allowedStatuses: MissionStatus[] = ["queued", "active", "blocked", "pending_approval", "approved", "rejected", "executed", "completed", "cancelled"];
 const allowedPriorities: MissionPriority[] = ["low", "normal", "high", "critical"];
 const allowedCommandSources: CommandSource[] = ["berthier_ui", "telegram", "system", "future_api"];
 const allowedCommandStatuses: CommandStatus[] = ["received", "parsed", "rejected", "converted_to_mission", "awaiting_approval", "completed"];
@@ -56,7 +56,7 @@ function getDb() {
         id TEXT PRIMARY KEY,
         title TEXT NOT NULL,
         description TEXT NOT NULL DEFAULT '',
-        status TEXT NOT NULL CHECK (status IN ('queued', 'active', 'blocked', 'completed', 'cancelled')),
+        status TEXT NOT NULL CHECK (status IN ('queued', 'active', 'blocked', 'pending_approval', 'approved', 'rejected', 'executed', 'completed', 'cancelled')),
         priority TEXT NOT NULL CHECK (priority IN ('low', 'normal', 'high', 'critical')),
         owner_agent TEXT NOT NULL,
         source_command_id TEXT,
@@ -110,6 +110,8 @@ function getDb() {
     ensureColumn("mission_events", "command_id", "TEXT");
     ensureColumn("mission_events", "agent_id", "TEXT");
     ensureColumn("mission_events", "metadata_json", "TEXT NOT NULL DEFAULT '{}'");
+
+
   }
 
   return db;

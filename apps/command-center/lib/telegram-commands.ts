@@ -10,9 +10,11 @@ import {
   formatApprovalRequired,
   formatGeneralBerthierChat,
   formatUnknownSafeFallback,
+  isApprovalDecision,
   isSlashCommand,
   mapIntentToDirectResponse
 } from "./telegram-intent-router.ts";
+import { processApprove, processReject, formatApprovalResult } from "./approval-gate.ts";
 import { processBerthierCommand } from "./mission-engine.ts";
 import type { BerthierCommandResult } from "./mission-engine.ts";
 import type { Mission } from "./types.ts";
@@ -46,6 +48,12 @@ export function normalizeTelegramCommand(text: string): string | null {
 
   const statusMatch = trimmed.match(/^\/status(?:@\w+)?$/i);
   if (statusMatch) return "Summarize status";
+
+  const approveMatch = trimmed.match(/^\/approve(?:@\w+)?\s+([a-z0-9-]+)$/i);
+  if (approveMatch) return `Approve mission ${approveMatch[1]}`;
+
+  const rejectMatch = trimmed.match(/^\/reject(?:@\w+)?\s+([a-z0-9-]+)$/i);
+  if (rejectMatch) return `Reject mission ${rejectMatch[1]}`;
 
   return trimmed;
 }
@@ -94,6 +102,22 @@ export function handleTelegramCommand(text: string): TelegramCommandResponse {
     return { text: formatMissionDetail(missionDetail[1]) };
   }
 
+  if (/^Approve mission\s+/i.test(normalized)) {
+    const idPrefix = normalized.replace(/^Approve mission\s+/i, "").trim();
+    const mission = resolveMissionByPrefix(idPrefix);
+    if (mission === "ambiguous") return { text: "Mission reference is ambiguous, Sire. Use a longer ID prefix." };
+    if (!mission) return { text: "Mission not found, Sire." };
+    return { text: formatApprovalResult(processApprove(mission.id)) };
+  }
+
+  if (/^Reject mission\s+/i.test(normalized)) {
+    const idPrefix = normalized.replace(/^Reject mission\s+/i, "").trim();
+    const mission = resolveMissionByPrefix(idPrefix);
+    if (mission === "ambiguous") return { text: "Mission reference is ambiguous, Sire. Use a longer ID prefix." };
+    if (!mission) return { text: "Mission not found, Sire." };
+    return { text: formatApprovalResult(processReject(mission.id)) };
+  }
+
   const resolvedCommand = resolveMissionReferenceInCommand(normalized);
   if (resolvedCommand === "ambiguous") return { text: "Mission reference is ambiguous, Sire. Use a longer ID prefix." };
   if (resolvedCommand === "missing") return { text: "Mission not found, Sire." };
@@ -104,6 +128,17 @@ export function handleTelegramCommand(text: string): TelegramCommandResponse {
 
 export function handleNaturalLanguageTelegram(text: string): TelegramCommandResponse | null {
   const classification = classifyTelegramIntent(text);
+
+  if (isApprovalDecision(classification)) {
+    const mission = resolveMissionByPrefix(classification.missionId);
+    if (mission === "ambiguous") return { text: "Mission reference is ambiguous, Sire. Use a longer ID prefix." };
+    if (!mission) return { text: "Mission not found, Sire." };
+    const result = classification.decision === "approved"
+      ? processApprove(mission.id)
+      : processReject(mission.id);
+    return { text: formatApprovalResult(result) };
+  }
+
   const direct = mapIntentToDirectResponse(classification);
   if (direct) return { text: direct };
 
