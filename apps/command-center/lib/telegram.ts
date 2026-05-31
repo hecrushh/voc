@@ -59,13 +59,26 @@ export async function handleTelegramUpdate(update: TelegramUpdate, send = sendTe
     await send(String(chatId), response.text);
     return { ok: true, status: "handled", chatId: String(chatId), responseText: response.text };
   } catch (error) {
+    let intentType = "unknown";
+    try {
+      const { classifyTelegramIntent } = await import("./telegram-intent-router.ts");
+      const classification = classifyTelegramIntent(text); intentType = "intent" in classification ? classification.intent : classification.type;
+    } catch {}
+    const err = error instanceof Error ? error : new Error(String(error));
+    console.error("[BERTHIER_ERROR]", {
+      message: text.slice(0, 200),
+      intentType,
+      errorName: err.name,
+      errorMessage: err.message,
+      stack: err.stack ?? "no stack"
+    });
     const errorText = "BERTHIER encountered an error, Sire. The command was not executed.";
     try {
       await send(String(chatId), errorText);
     } catch {
-      return { ok: false, status: "send_failed", chatId: String(chatId), error: error instanceof Error ? error.message : "Unknown Telegram error" };
+      return { ok: false, status: "send_failed", chatId: String(chatId), error: err.message };
     }
-    return { ok: false, status: "invalid", chatId: String(chatId), responseText: errorText, error: error instanceof Error ? error.message : "Unknown Telegram error" };
+    return { ok: false, status: "invalid", chatId: String(chatId), responseText: errorText, error: err.message };
   }
 }
 
