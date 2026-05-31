@@ -4,6 +4,7 @@ import { summarizeWorkload } from "./workload.ts";
 import { routeSafeModelTask } from "./model-router.ts";
 import { handleSkpCommand } from "./skp-assistant.ts";
 import { isForbiddenGithubWriteRequest, summarizeRepoStatus } from "./github-intelligence.ts";
+import { getEnvInventory, formatEnvInventory } from "./env-inventory.ts";
 import {
   classifyTelegramIntent,
   formatApprovalRequired,
@@ -116,6 +117,7 @@ export function handleNaturalLanguageTelegram(text: string): TelegramCommandResp
   }
 
   if (classification.intent === "mission_list") return { text: formatRecentMissions() };
+  if (classification.intent === "env_inventory") return { text: formatEnvInventory(getEnvInventory()) };
   if (classification.intent === "repo_status") return { text: summarizeRepoStatus() };
   if (classification.intent === "skp_planning") return { text: handleSkpCommand(classification.normalizedCommand ?? "/skp status") };
   if (classification.intent === "general_berthier_chat") return { text: formatGeneralBerthierChat(text, classification.language) };

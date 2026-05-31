@@ -84,3 +84,34 @@ test('slash commands still work after natural language router', () => {
   const missions = telegramCommands.handleTelegramCommand('/missions');
   assert.match(missions.text, /Missions, Sire|No missions recorded, Sire/);
 });
+
+test('routes natural language env inventory check', () => {
+  const response1 = telegramCommands.handleTelegramCommand('Berthier, cek env VOC');
+  assert.match(response1.text, /Env inventory, Sire/);
+  assert.match(response1.text, /OPENAI_API_KEY/);
+
+  const response2 = telegramCommands.handleTelegramCommand('cek env');
+  assert.match(response2.text, /Env inventory, Sire/);
+
+  const response3 = telegramCommands.handleTelegramCommand('env inventory');
+  assert.match(response3.text, /Env inventory, Sire/);
+
+  const response4 = telegramCommands.handleTelegramCommand('status secret');
+  assert.match(response4.text, /Env inventory, Sire/);
+
+  const response5 = telegramCommands.handleTelegramCommand('cek konfigurasi');
+  assert.match(response5.text, /Env inventory, Sire/);
+});
+
+test('env inventory reply never contains secret values', () => {
+  const original = process.env.OPENAI_API_KEY;
+  process.env.OPENAI_API_KEY = 'sk-test-should-never-appear-67890';
+  const response = telegramCommands.handleTelegramCommand('cek env');
+  assert.ok(!response.text.includes('sk-test-should-never-appear-67890'), 'response must not contain secret values');
+  assert.match(response.text, /Secret values are redacted by design/);
+  if (original === undefined) {
+    delete process.env.OPENAI_API_KEY;
+  } else {
+    process.env.OPENAI_API_KEY = original;
+  }
+});

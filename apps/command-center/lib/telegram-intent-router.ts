@@ -2,6 +2,7 @@ import { generateDailyBriefing } from "./briefing.ts";
 import { summarizeWorkload } from "./workload.ts";
 import { routeSafeModelTask } from "./model-router.ts";
 import { isAgentWorkbenchRequest } from "./agent-workbench.ts";
+import { getEnvInventory, formatEnvInventory } from "./env-inventory.ts";
 
 export type TelegramIntent =
   | "status_query"
@@ -13,6 +14,7 @@ export type TelegramIntent =
   | "agent_workbench_task"
   | "skp_planning"
   | "repo_status"
+  | "env_inventory"
   | "general_berthier_chat"
   | "unknown_safe_fallback"
   | "approval_required";
@@ -71,6 +73,10 @@ export function classifyTelegramIntent(text: string): TelegramIntentClassificati
 
   if (/\b(repo|repository|git|github|commit|branch)\b/i.test(lower) && /\b(voc|status|cek|check|lihat|keadaan|summary|ringkasan)\b/i.test(lower)) {
     return { intent: "repo_status", confidence: 0.9, normalizedCommand: "/repo status", reason: "repo_status_keywords", language };
+  }
+
+  if (/\b(env|envir?onment|secret|konfigurasi|config)\b/i.test(lower) && /\b(cek|check|inventory|inventaris|status)\b/i.test(lower)) {
+    return { intent: "env_inventory", confidence: 0.9, reason: "env_inventory_keywords", language };
   }
 
   if (/\b(mission|missions|misi|tugas|daftar|list|ada apa|apa saja)\b/i.test(lower) && /\b(mission|missions|misi|tugas|daftar|list)\b/i.test(lower)) {
@@ -148,6 +154,7 @@ export function formatUnknownSafeFallback(language: "id" | "en"): string {
 export function mapIntentToDirectResponse(classification: TelegramIntentClassification): string | null {
   if (classification.intent === "briefing_request") return generateDailyBriefing();
   if (classification.intent === "workload_query") return summarizeWorkload();
+  if (classification.intent === "env_inventory") return formatEnvInventory(getEnvInventory());
   return null;
 }
 
@@ -215,6 +222,7 @@ function parseModelIntent(text: string): TelegramIntent | null {
     "agent_workbench_task",
     "skp_planning",
     "repo_status",
+    "env_inventory",
     "general_berthier_chat",
     "unknown_safe_fallback"
   ];
