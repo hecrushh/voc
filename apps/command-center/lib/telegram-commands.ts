@@ -15,10 +15,12 @@ import {
 import { processBerthierCommand } from "./mission-engine.ts";
 import type { BerthierCommandResult } from "./mission-engine.ts";
 import type { Mission } from "./types.ts";
+import { createAgentWorkbenchTask, formatAgentWorkbenchResponse, type AgentWorkbenchResult } from "./agent-workbench.ts";
 
 export type TelegramCommandResponse = {
   text: string;
   result?: BerthierCommandResult;
+  workbench?: AgentWorkbenchResult;
 };
 
 export function normalizeTelegramCommand(text: string): string | null {
@@ -106,6 +108,11 @@ export function handleNaturalLanguageTelegram(text: string): TelegramCommandResp
 
   if (classification.intent === "approval_required") {
     return { text: formatApprovalRequired(classification.language, text) };
+  }
+
+  if (classification.intent === "agent_workbench_task") {
+    const workbench = createAgentWorkbenchTask(text);
+    return { text: formatAgentWorkbenchResponse(workbench), workbench };
   }
 
   if (classification.intent === "mission_list") return { text: formatRecentMissions() };

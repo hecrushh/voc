@@ -20,6 +20,22 @@ test('classifies deterministic Indonesian Telegram intents', () => {
   assert.equal(router.classifyTelegramIntent('cek repo VOC').intent, 'repo_status');
 });
 
+test('routes natural language agent workbench tasks', () => {
+  assert.equal(router.classifyTelegramIntent('Berthier, minta Lannes review backend VOC').intent, 'agent_workbench_task');
+  assert.equal(router.classifyTelegramIntent('Berthier, suruh Ney cek UI missions page').intent, 'agent_workbench_task');
+  assert.equal(router.classifyTelegramIntent('Berthier, buat draft marketing untuk Tipper').intent, 'agent_workbench_task');
+  assert.equal(router.classifyTelegramIntent('Berthier, riset integrasi SKP bridge').intent, 'agent_workbench_task');
+});
+
+test('creates workbench mission and side-effect-free artifact', () => {
+  const response = telegramCommands.handleTelegramCommand('Berthier, minta Lannes review backend VOC');
+  assert.match(response.text, /Agent task prepared, Sire/);
+  assert.match(response.text, /Agent: LANNES/);
+  assert.match(response.text, /Artifact: code diff proposal/);
+  assert.equal(response.workbench?.mission.owner_agent, 'lannes');
+  assert.ok(db.listMissions().some((mission) => mission.owner_agent === 'lannes' && mission.description.includes('Code Diff Proposal')));
+});
+
 test('creates mission from Indonesian natural language', () => {
   const response = telegramCommands.handleTelegramCommand('buat mission baru untuk cek SKP besok');
   assert.match(response.text, /Mission created, Sire/);

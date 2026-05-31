@@ -1,6 +1,7 @@
 import { generateDailyBriefing } from "./briefing.ts";
 import { summarizeWorkload } from "./workload.ts";
 import { routeSafeModelTask } from "./model-router.ts";
+import { isAgentWorkbenchRequest } from "./agent-workbench.ts";
 
 export type TelegramIntent =
   | "status_query"
@@ -9,6 +10,7 @@ export type TelegramIntent =
   | "mission_list"
   | "mission_create"
   | "mission_update"
+  | "agent_workbench_task"
   | "skp_planning"
   | "repo_status"
   | "general_berthier_chat"
@@ -57,6 +59,10 @@ export function classifyTelegramIntent(text: string): TelegramIntentClassificati
       reason: "mission_update_keywords",
       language
     };
+  }
+
+  if (isAgentWorkbenchRequest(trimmed)) {
+    return { intent: "agent_workbench_task", confidence: 0.9, reason: "agent_workbench_keywords", language };
   }
 
   if (/\b(skp|oauth|tipper)\b/i.test(lower)) {
@@ -206,6 +212,7 @@ function parseModelIntent(text: string): TelegramIntent | null {
     "mission_list",
     "mission_create",
     "mission_update",
+    "agent_workbench_task",
     "skp_planning",
     "repo_status",
     "general_berthier_chat",
