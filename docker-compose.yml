@@ -13,6 +13,9 @@ services:
       OLLAMA_BASE_URL: http://127.0.0.1:11434
       NINE_ROUTER_URL: http://127.0.0.1:20128
       NINE_ROUTER_RUNTIME_MODE: manual
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_ALLOWED_USER_IDS: ${TELEGRAM_ALLOWED_USER_IDS}
+      TELEGRAM_WEBHOOK_SECRET: ${TELEGRAM_WEBHOOK_SECRET}
     network_mode: host
     volumes:
       - ./docs:/voc/docs:ro
