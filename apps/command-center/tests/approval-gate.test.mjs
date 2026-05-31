@@ -166,6 +166,21 @@ test('Telegram slash /approve resolves mission and approves', () => {
   // Risky create blocked at router level. Create safe mission then approve.
 });
 
+
+test('risky Telegram prompt creates pending approval mission response', () => {
+  const response = telegramCommands.handleTelegramCommand('Deploy voc sekarang');
+  assert.match(response.text, /Approval required, Sire\./);
+  assert.match(response.text, /Mission:/);
+  assert.match(response.text, /Status: pending_approval/);
+  assert.match(response.text, /Risk: high/);
+  assert.match(response.text, /Request: Deploy voc sekarang/);
+  assert.match(response.text, /APPROVE/);
+  assert.match(response.text, /REJECT/);
+  assert.doesNotMatch(response.text, /Saya bisa bantu ubah ini menjadi mission atau approval request/);
+  assert.equal(response.result?.mission?.status, 'pending_approval');
+  assert.equal(response.result?.approval?.status, 'requested');
+});
+
 test('Telegram approve mission end-to-end', () => {
   const created = missionEngine.processBerthierCommand('deploy production e2e approve', {
     source: 'telegram',

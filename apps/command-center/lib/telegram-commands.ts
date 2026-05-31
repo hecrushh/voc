@@ -7,7 +7,6 @@ import { isForbiddenGithubWriteRequest, summarizeRepoStatus } from "./github-int
 import { getEnvInventory, formatEnvInventory } from "./env-inventory.ts";
 import {
   classifyTelegramIntent,
-  formatApprovalRequired,
   formatGeneralBerthierChat,
   formatUnknownSafeFallback,
   isApprovalDecision,
@@ -143,7 +142,8 @@ export function handleNaturalLanguageTelegram(text: string): TelegramCommandResp
   if (direct) return { text: direct };
 
   if (classification.intent === "approval_required") {
-    return { text: formatApprovalRequired(classification.language, text) };
+    const result = processBerthierCommand(text, { source: "telegram", commanderId: "telegram" });
+    return { text: formatPendingApprovalMission(result, text), result };
   }
 
   if (classification.intent === "agent_workbench_task") {
@@ -200,6 +200,25 @@ export function formatBerthierResult(result: BerthierCommandResult): string {
     ].filter(Boolean).join("\n");
   }
 
+  return result.response;
+}
+
+export function formatPendingApprovalMission(result: BerthierCommandResult, originalText: string): string {
+  if (result.mission && result.approval) {
+    return [
+      "Approval required, Sire.",
+      "",
+      `Mission: ${shortMissionId(result.mission.id)}`,
+      `Status: ${result.mission.status}`,
+      `Risk: ${result.approval.risk_level}`,
+      `Request: ${originalText}`,
+      "",
+      "Reply:",
+      `APPROVE ${shortMissionId(result.mission.id)}`,
+      "or",
+      `REJECT ${shortMissionId(result.mission.id)}`
+    ].join("\n");
+  }
   return result.response;
 }
 

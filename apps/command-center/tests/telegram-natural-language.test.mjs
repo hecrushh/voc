@@ -74,7 +74,9 @@ test('uses safe fallback for unknown natural language', () => {
 test('refuses or approval-gates natural language execution requests', () => {
   const response = telegramCommands.handleTelegramCommand('jalankan Playwright untuk login SKP dan posting sekarang');
   assert.match(response.text, /Approval required, Sire/);
-  assert.match(response.text, /tidak akan mengeksekusi|will not execute/i);
+  assert.match(response.text, /Mission:/);
+  assert.match(response.text, /APPROVE/);
+  assert.match(response.text, /REJECT/);
 });
 
 test('slash commands still work after natural language router', () => {
