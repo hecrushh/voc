@@ -107,6 +107,7 @@ function getDb() {
     ensureColumn("missions", "due_at", "TEXT");
     ensureColumn("missions", "blocked_reason", "TEXT");
     ensureColumn("missions", "completed_at", "TEXT");
+    ensureColumn("missions", "artifact_path", "TEXT");
     migrateMissionStatusConstraint();
     ensureColumn("commands", "linked_mission_id", "TEXT");
     ensureColumn("mission_events", "command_id", "TEXT");
@@ -155,6 +156,7 @@ function migrateMissionStatusConstraint() {
         due_at TEXT,
         blocked_reason TEXT,
         completed_at TEXT,
+        artifact_path TEXT,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
         FOREIGN KEY (source_command_id) REFERENCES commands(id) ON DELETE SET NULL
@@ -162,7 +164,8 @@ function migrateMissionStatusConstraint() {
 
       INSERT INTO missions_migrated (
         id, title, description, status, priority, owner_agent, source_command_id,
-        requires_approval, approval_id, due_at, blocked_reason, completed_at, created_at, updated_at
+        requires_approval, approval_id, due_at, blocked_reason, completed_at, artifact_path,
+        created_at, updated_at
       )
       SELECT
         id,
@@ -177,6 +180,7 @@ function migrateMissionStatusConstraint() {
         due_at,
         blocked_reason,
         completed_at,
+        artifact_path,
         created_at,
         updated_at
       FROM missions;
@@ -216,6 +220,7 @@ function rowToMission(row: Record<string, unknown>): Mission {
     due_at: nullableString(row.due_at),
     blocked_reason: nullableString(row.blocked_reason),
     completed_at: nullableString(row.completed_at),
+    artifact_path: nullableString(row.artifact_path),
     created_at: String(row.created_at),
     updated_at: String(row.updated_at)
   };
@@ -305,7 +310,8 @@ export function validateMissionInput(input: Partial<MissionInput>): MissionInput
     approval_id: input.approval_id ?? null,
     due_at: input.due_at ?? null,
     blocked_reason: blockedReason,
-    completed_at: input.completed_at ?? null
+    completed_at: input.completed_at ?? null,
+    artifact_path: input.artifact_path ?? null
   };
 }
 
@@ -403,10 +409,10 @@ export function createMission(input: MissionInput): Mission {
     .prepare(`
       INSERT INTO missions (
         id, title, description, status, priority, owner_agent, source_command_id,
-        requires_approval, approval_id, due_at, blocked_reason, completed_at,
+        requires_approval, approval_id, due_at, blocked_reason, completed_at, artifact_path,
         created_at, updated_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `)
     .run(
       id,
@@ -421,6 +427,7 @@ export function createMission(input: MissionInput): Mission {
       mission.due_at ?? null,
       mission.blocked_reason ?? null,
       completedAt,
+      mission.artifact_path ?? null,
       now,
       now
     );
@@ -461,7 +468,8 @@ export function updateMission(id: string, input: Partial<MissionInput>): Mission
     approval_id: input.approval_id ?? current.approval_id,
     due_at: input.due_at ?? current.due_at,
     blocked_reason: input.blocked_reason ?? current.blocked_reason,
-    completed_at: input.completed_at ?? current.completed_at
+    completed_at: input.completed_at ?? current.completed_at,
+    artifact_path: input.artifact_path ?? current.artifact_path
   });
   const now = new Date().toISOString();
   const completedAt = next.status === "completed" && current.status !== "completed" ? now : (next.completed_at ?? null);
@@ -471,7 +479,7 @@ export function updateMission(id: string, input: Partial<MissionInput>): Mission
       UPDATE missions
       SET title = ?, description = ?, status = ?, priority = ?, owner_agent = ?,
           source_command_id = ?, requires_approval = ?, approval_id = ?, due_at = ?,
-          blocked_reason = ?, completed_at = ?, updated_at = ?
+          blocked_reason = ?, completed_at = ?, artifact_path = ?, updated_at = ?
       WHERE id = ?
     `)
     .run(
@@ -486,6 +494,7 @@ export function updateMission(id: string, input: Partial<MissionInput>): Mission
       next.due_at ?? null,
       next.blocked_reason ?? null,
       completedAt,
+      next.artifact_path ?? null,
       now,
       id
     );

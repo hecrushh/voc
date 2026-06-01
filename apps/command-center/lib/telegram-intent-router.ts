@@ -11,6 +11,8 @@ export type TelegramIntent =
   | "mission_list"
   | "mission_create"
   | "mission_update"
+  | "mission_status_query"
+  | "mission_artifact_open"
   | "agent_workbench_task"
   | "skp_planning"
   | "repo_status"
@@ -84,6 +86,16 @@ export function routeTelegramIntent(text: string): TelegramIntentClassification 
       reason: "mission_update_keywords",
       language
     };
+  }
+
+  const missionStatusQuery = matchMissionStatusQuery(trimmed);
+  if (missionStatusQuery) {
+    return { intent: "mission_status_query", confidence: 0.9, normalizedCommand: missionStatusQuery, reason: "mission_status_query_keywords", language };
+  }
+
+  const missionArtifactOpen = matchMissionArtifactOpen(trimmed);
+  if (missionArtifactOpen) {
+    return { intent: "mission_artifact_open", confidence: 0.9, normalizedCommand: missionArtifactOpen, reason: "mission_artifact_open_keywords", language };
   }
 
   if (isAgentWorkbenchRequest(trimmed)) {
@@ -164,22 +176,24 @@ export function formatGeneralBerthierChat(text: string, language: "id" | "en"): 
         "Siap, Sire.",
         "",
         "Keadaan VOC bisa saya bantu melalui briefing, status mission, workload, SKP planning, dan repo status.",
-        "Kirim contoh: ‘status VOC’, ‘briefing hari ini’, ‘buat mission: ...’, atau ‘cek repo VOC’."
+        "Kirim: status mission <id>, buka mission <id>, cek mission <id>, daftar mission.",
+        "Kirim contoh: 'status VOC', 'briefing hari ini', 'buat mission: ...', atau 'cek repo VOC'."
       ].join("\n")
     : [
         "Ready, Sire.",
         "",
         "I can help with VOC briefing, mission status, workload, SKP planning, and repo status.",
-        "Try: ‘VOC status’, ‘today briefing’, ‘create mission: ...’, or ‘check VOC repo’."
+        "Try: status mission <id>, buka mission <id>, cek mission <id>, missions.",
+        "Try: 'VOC status', 'today briefing', 'create mission: ...', or 'check VOC repo'."
       ].join("\n");
   return routeSafeModelTask({ category: "reasoning", prompt: `Safe BERTHIER chat response only: ${text}`, fallback }).text;
 }
 
 export function formatUnknownSafeFallback(language: "id" | "en"): string {
   if (language === "id") {
-    return "Saya belum menangkap maksudnya, Sire. Coba: status VOC, briefing hari ini, daftar mission, buat mission: <judul>, workload, SKP status, atau cek repo VOC.";
+    return "Saya belum menangkap maksudnya, Sire. Coba: status VOC, briefing hari ini, daftar mission, buat mission: <judul>, workload, SKP status, status mission <id>, buka mission <id>, atau cek repo VOC.";
   }
-  return "I did not catch the intent, Sire. Try: VOC status, today briefing, missions, create mission: <title>, workload, SKP status, or check VOC repo.";
+  return "I did not catch the intent, Sire. Try: VOC status, today briefing, missions, create mission: <title>, workload, SKP status, status mission <id>, buka mission <id>, or check VOC repo.";
 }
 
 export function mapIntentToDirectResponse(classification: TelegramIntentClassification): string | null {
@@ -250,6 +264,18 @@ function matchMissionUpdate(text: string): string | null {
   return null;
 }
 
+function matchMissionStatusQuery(text: string): string | null {
+  const match = text.match(/^(?:status|cek|check|info|lihat)\s+mission\s+([a-f0-9-]+)$/i);
+  if (match?.[1]) return `status mission ${match[1]}`;
+  return null;
+}
+
+function matchMissionArtifactOpen(text: string): string | null {
+  const match = text.match(/^(?:buka|open|lihat\s+artifact)\s+mission\s+([a-f0-9-]+)$/i);
+  if (match?.[1]) return `open mission ${match[1]}`;
+  return null;
+}
+
 function mapSkpCommand(lower: string): string {
   if (/\b(checklist|ceklist|daftar)\b/i.test(lower)) return "/skp checklist";
   if (/\b(next|berikut|selanjutnya|apakan|perlu|apa yang)\b/i.test(lower)) return "/skp next";
@@ -280,6 +306,8 @@ function parseModelIntent(text: string): TelegramIntent | null {
     "mission_list",
     "mission_create",
     "mission_update",
+    "mission_status_query",
+    "mission_artifact_open",
     "agent_workbench_task",
     "skp_planning",
     "repo_status",
@@ -297,5 +325,5 @@ function detectLanguage(text: string): "id" | "en" {
 }
 
 function normalizeForMatching(text: string): string {
-  return text.toLowerCase().replace(/[“”]/g, '"').replace(/[‘’]/g, "'").trim();
+  return text.toLowerCase().replace(/[""]/g, '"').replace(/['']/g, "'").trim();
 }

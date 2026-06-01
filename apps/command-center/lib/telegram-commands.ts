@@ -18,6 +18,8 @@ import { processBerthierCommand } from "./mission-engine.ts";
 import type { BerthierCommandResult } from "./mission-engine.ts";
 import type { Mission } from "./types.ts";
 import { createAgentWorkbenchTask, formatAgentWorkbenchResponse, type AgentWorkbenchResult } from "./agent-workbench.ts";
+import { classifyCapability } from "./capability-router.ts";
+import { summarizeMissionArtifact } from "./artifact-store.ts";
 
 export type TelegramCommandResponse = {
   text: string;
@@ -101,6 +103,18 @@ export function handleTelegramCommand(text: string): TelegramCommandResponse {
     return { text: formatMissionDetail(missionDetail[1]) };
   }
 
+  // Mission status query: "status mission <id>", "cek mission <id>", "mission <id>"
+  const missionStatusQuery = normalized.match(/^(?:status|cek|check|info|lihat)\s+mission\s+([a-f0-9-]+)$/i);
+  if (missionStatusQuery) {
+    return { text: formatMissionStatus(missionStatusQuery[1]) };
+  }
+
+  // Mission artifact retrieval: "buka mission <id>", "open mission <id>"
+  const missionArtifactQuery = normalized.match(/^(?:buka|open|lihat\s+artifact)\s+mission\s+([a-f0-9-]+)$/i);
+  if (missionArtifactQuery) {
+    return { text: formatMissionArtifactView(missionArtifactQuery[1]) };
+  }
+
   if (/^Approve mission\s+/i.test(normalized)) {
     const idPrefix = normalized.replace(/^Approve mission\s+/i, "").trim();
     const mission = resolveMissionByPrefix(idPrefix);
@@ -149,6 +163,14 @@ export function handleNaturalLanguageTelegram(text: string): TelegramCommandResp
   if (classification.intent === "agent_workbench_task") {
     const workbench = createAgentWorkbenchTask(text);
     return { text: formatAgentWorkbenchResponse(workbench), workbench };
+  }
+
+  if (classification.intent === "mission_status_query") {
+    return { text: formatMissionStatus(classification.normalizedCommand?.replace("status mission ", "") ?? "") };
+  }
+
+  if (classification.intent === "mission_artifact_open") {
+    return { text: formatMissionArtifactView(classification.normalizedCommand?.replace("open mission ", "") ?? "") };
   }
 
   if (classification.intent === "mission_list") return { text: formatRecentMissions() };
@@ -247,6 +269,30 @@ export function formatMissionDetail(idOrPrefix: string): string {
     mission.requires_approval ? "Approval: required" : null,
     `Updated: ${mission.updated_at}`
   ].filter(Boolean).join("\n");
+}
+
+export function formatMissionStatus(idOrPrefix: string): string {
+  const mission = resolveMissionByPrefix(idOrPrefix);
+  if (mission === "ambiguous") return "Mission reference is ambiguous, Sire. Use a longer ID prefix.";
+  if (!mission) return "Mission not found, Sire.";
+  const capabilityResult = classifyCapability(mission.title);
+  return [
+    `Mission: ${shortMissionId(mission.id)}`,
+    `Status: ${mission.status}`,
+    `Agent: ${mission.owner_agent}`,
+    `Capability: ${capabilityResult.capability}`,
+    mission.artifact_path ? `Artifact: ${mission.artifact_path}` : null,
+  ].filter(Boolean).join("\n");
+}
+
+export function formatMissionArtifactView(idOrPrefix: string): string {
+  const mission = resolveMissionByPrefix(idOrPrefix);
+  if (mission === "ambiguous") return "Mission reference is ambiguous, Sire. Use a longer ID prefix.";
+  if (!mission) return "Mission not found, Sire.";
+  if (!mission.artifact_path) return `No artifact stored for mission ${shortMissionId(mission.id)}, Sire.`;
+  const summary = summarizeMissionArtifact(mission.artifact_path);
+  if (!summary) return `Artifact not found for mission ${shortMissionId(mission.id)}, Sire.`;
+  return `Mission: ${shortMissionId(mission.id)}\n\nArtifact Summary:\n${summary}`;
 }
 
 export function resolveMissionByPrefix(idOrPrefix: string): Mission | null | "ambiguous" {

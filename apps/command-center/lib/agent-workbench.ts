@@ -1,7 +1,8 @@
-import { createCommand, createMission, logMissionEvent, updateCommand } from "./db.ts";
+import { createCommand, createMission, logMissionEvent, updateCommand, updateMission } from "./db.ts";
 import { routeSafeModelTask, type ProviderName, type SafeModelCategory } from "./model-router.ts";
 import type { CommandRecord, Mission, MissionPriority } from "./types.ts";
 import { classifyCapability, type Capability } from "./capability-router.ts";
+import { writeMissionArtifact } from "./artifact-store.ts";
 import { resolveProviderStrategy, formatProviderStrategy, type ProviderStrategy } from "./provider-strategy.ts";
 
 export type WorkbenchAgentId =
@@ -232,6 +233,15 @@ export function createAgentWorkbenchTask(text: string): AgentWorkbenchResult {
       reason: routed.reason
     })
   });
+  const artifactPath = writeMissionArtifact({
+    mission,
+    agent: route.agentName,
+    capability: route.capability,
+    providerStrategy: route.providerStrategy,
+    content: routed.text,
+    createdAt: new Date().toISOString()
+  });
+  updateMission(mission.id, { artifact_path: artifactPath });
   const completedCommand = updateCommand(command.id, {
     status: "converted_to_mission",
     linked_mission_id: mission.id,

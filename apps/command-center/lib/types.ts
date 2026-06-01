@@ -35,6 +35,7 @@ export type Mission = {
   due_at: string | null;
   blocked_reason: string | null;
   completed_at: string | null;
+  artifact_path: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -51,6 +52,7 @@ export type MissionInput = {
   due_at?: string | null;
   blocked_reason?: string | null;
   completed_at?: string | null;
+  artifact_path?: string | null;
 };
 
 export type CommandSource = "berthier_ui" | "telegram" | "system" | "future_api";
