@@ -1,6 +1,8 @@
 import { createCommand, createMission, logMissionEvent, updateCommand } from "./db.ts";
 import { routeSafeModelTask, type ProviderName, type SafeModelCategory } from "./model-router.ts";
 import type { CommandRecord, Mission, MissionPriority } from "./types.ts";
+import { classifyCapability, type Capability } from "./capability-router.ts";
+import { resolveProviderStrategy, formatProviderStrategy, type ProviderStrategy } from "./provider-strategy.ts";
 
 export type WorkbenchAgentId =
   | "berthier"
@@ -31,6 +33,8 @@ export type AgentWorkbenchRoute = {
   priority: MissionPriority;
   title: string;
   rationale: string;
+  capability: Capability;
+  providerStrategy: ProviderStrategy;
 };
 
 export type AgentWorkbenchResult = {
@@ -171,6 +175,7 @@ export function isAgentWorkbenchRequest(text: string): boolean {
 export function routeAgentWorkbenchTask(text: string): AgentWorkbenchRoute {
   const normalized = stripBerthierAddress(text);
   const rule = routeRules.find((entry) => entry.pattern.test(normalized)) ?? routeRules[7];
+  const capabilityResult = classifyCapability(text);
   return {
     agentId: rule.agentId,
     agentName: rule.agentName,
@@ -179,7 +184,9 @@ export function routeAgentWorkbenchTask(text: string): AgentWorkbenchRoute {
     artifactKind: rule.artifactKind,
     priority: rule.priority,
     title: `${rule.titlePrefix}: ${summarizeTaskTitle(normalized)}`,
-    rationale: rule.rationale
+    rationale: rule.rationale,
+    capability: capabilityResult.capability,
+    providerStrategy: resolveProviderStrategy(capabilityResult.capability),
   };
 }
 
@@ -216,6 +223,8 @@ export function createAgentWorkbenchTask(text: string): AgentWorkbenchResult {
     event_type: "artifact_prepared",
     summary: `${route.agentName} prepared ${route.artifactKind}.`,
     metadata_json: JSON.stringify({
+      capability: route.capability,
+      providerStrategy: route.providerStrategy,
       provider: routed.usedProvider,
       requested_provider: route.provider,
       artifact_kind: route.artifactKind,
@@ -237,7 +246,8 @@ export function formatAgentWorkbenchResponse(result: AgentWorkbenchResult): stri
     "Agent task prepared, Sire.",
     "",
     `Agent: ${result.route.agentName}`,
-    `Provider route: ${formatProviderName(result.route.provider)}`,
+    `Capability: ${result.route.capability}`,
+    `Provider Strategy: ${formatProviderStrategy(result.route.providerStrategy)}`,
     `Artifact: ${formatArtifactKind(result.route.artifactKind)}`,
     `Mission: ${result.mission.id.slice(0, 8)}`,
     `Title: ${result.mission.title}`,
