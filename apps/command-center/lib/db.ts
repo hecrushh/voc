@@ -25,6 +25,7 @@ const DB_PATH = process.env.VOC_DB_PATH ?? "/opt/voc/data/voc.db";
 let db: DatabaseSync | undefined;
 
 const allowedStatuses: MissionStatus[] = ["queued", "active", "blocked", "pending_approval", "approved", "rejected", "executed", "completed", "cancelled"];
+const missionStatusSql = allowedStatuses.map((status) => `'${status}'`).join(", ");
 const allowedPriorities: MissionPriority[] = ["low", "normal", "high", "critical"];
 const allowedCommandSources: CommandSource[] = ["berthier_ui", "telegram", "system", "future_api"];
 const allowedCommandStatuses: CommandStatus[] = ["received", "parsed", "rejected", "converted_to_mission", "awaiting_approval", "completed"];
@@ -106,6 +107,7 @@ function getDb() {
     ensureColumn("missions", "due_at", "TEXT");
     ensureColumn("missions", "blocked_reason", "TEXT");
     ensureColumn("missions", "completed_at", "TEXT");
+    migrateMissionStatusConstraint();
     ensureColumn("commands", "linked_mission_id", "TEXT");
     ensureColumn("mission_events", "command_id", "TEXT");
     ensureColumn("mission_events", "agent_id", "TEXT");
@@ -122,6 +124,73 @@ function ensureColumn(table: string, column: string, definition: string) {
   const rows = database.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>;
   if (!rows.some((row) => row.name === column)) {
     database.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition};`);
+  }
+}
+
+function migrateMissionStatusConstraint() {
+  const database = db as DatabaseSync;
+  const schema = database
+    .prepare("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'missions'")
+    .get() as { sql: string } | undefined;
+
+  if (!schema?.sql || schema.sql.includes("'pending_approval'")) {
+    return;
+  }
+
+  database.exec("PRAGMA foreign_keys = OFF;");
+  try {
+    database.exec(`
+      BEGIN TRANSACTION;
+
+      CREATE TABLE missions_migrated (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        description TEXT NOT NULL DEFAULT '',
+        status TEXT NOT NULL CHECK (status IN (${missionStatusSql})),
+        priority TEXT NOT NULL CHECK (priority IN ('low', 'normal', 'high', 'critical')),
+        owner_agent TEXT NOT NULL,
+        source_command_id TEXT,
+        requires_approval INTEGER NOT NULL DEFAULT 0,
+        approval_id TEXT,
+        due_at TEXT,
+        blocked_reason TEXT,
+        completed_at TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (source_command_id) REFERENCES commands(id) ON DELETE SET NULL
+      );
+
+      INSERT INTO missions_migrated (
+        id, title, description, status, priority, owner_agent, source_command_id,
+        requires_approval, approval_id, due_at, blocked_reason, completed_at, created_at, updated_at
+      )
+      SELECT
+        id,
+        title,
+        COALESCE(description, ''),
+        status,
+        priority,
+        owner_agent,
+        source_command_id,
+        COALESCE(requires_approval, 0),
+        approval_id,
+        due_at,
+        blocked_reason,
+        completed_at,
+        created_at,
+        updated_at
+      FROM missions;
+
+      DROP TABLE missions;
+      ALTER TABLE missions_migrated RENAME TO missions;
+
+      COMMIT;
+    `);
+  } catch (error) {
+    database.exec("ROLLBACK;");
+    throw error;
+  } finally {
+    database.exec("PRAGMA foreign_keys = ON;");
   }
 }
 
